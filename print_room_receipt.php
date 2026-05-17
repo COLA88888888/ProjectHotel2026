@@ -8,7 +8,8 @@ if (!isset($_GET['booking_id'])) {
 
 $booking_id = $_GET['booking_id'];
 
-// Fetch settings
+// --- 1. ໂຫຼດການຕັ້ງຄ່າໃບບິນ (Receipt Configuration Loader) ---
+// ດຶງຂໍ້ມູນການຕັ້ງຄ່າທັງໝົດຂອງໂຮງແຮມ ຈາກ Settings ເຊັ່ນ: ຊື່ໂຮງແຮມ, ເບີໂທ, ທີ່ຢູ່, ທ້າຍບິນ, ແລະ ພາສີ
 $stmtSettings = $pdo->query("SELECT setting_key, setting_value FROM settings");
 $settings = $stmtSettings->fetchAll(PDO::FETCH_KEY_PAIR);
 $hotel_name = $settings['hotel_name'] ?? 'Hotel System';
@@ -53,10 +54,14 @@ $svcStmt = $pdo->prepare("
 $svcStmt->execute([$booking_id]);
 $services = $svcStmt->fetchAll();
 
+$d1 = new DateTime($booking['check_in_date']);
+$d2 = new DateTime($booking['check_out_date']);
+$nights = $d1->diff($d2)->days ?: 1;
+
 $subtotal = $booking['total_price'] + $booking['food_charge'];
 $tax_amount = round($subtotal * ($tax_percent / 100));
 $grand_total = $subtotal + $tax_amount;
-$final_payable = $grand_total - $booking['deposit_amount'];
+$final_payable = max(0, $grand_total - $booking['deposit_amount']);
 ?>
 <!DOCTYPE html>
 <html lang="lo">
@@ -84,10 +89,21 @@ $final_payable = $grand_total - $booking['deposit_amount'];
         .grand-total { font-size: 15px; font-weight: bold; border-top: 1px solid #000; padding-top: 5px; margin-top: 5px; color: #d9534f; }
         .footer { text-align: center; margin-top: 10px; font-size: 10px; font-style: italic; line-height: 1.2; color: #444; }
         
+        @page {
+            margin: 0; /* This removes the browser's default URL and page number headers/footers */
+        }
+        
         @media print {
             body { background: none; padding: 0; margin: 0; }
-            .receipt { max-width: 100%; width: 100%; padding: 3mm; margin: 0; box-shadow: none; }
-            .no-print { display: none; }
+            .receipt { 
+                width: 300px !important; 
+                max-width: 300px !important; 
+                padding: 10px !important; 
+                margin: 0 auto !important; 
+                box-shadow: none !important; 
+                display: block !important; 
+            }
+            .no-print { display: none !important; }
         }
         
         .btn-print {
@@ -129,7 +145,7 @@ $final_payable = $grand_total - $booking['deposit_amount'];
         <div class="divider"></div>
         <div style="font-weight: bold; font-size: 13px; margin-bottom: 5px;">
             <i class="fas fa-bed mr-1"></i> <?php echo $lang['room_invoice'] ?? 'ໃບບິນຄ່າທີ່ພັກ'; ?><br>
-            <small style="font-weight: normal; color: #666;">(ROOM INVOICE / OFFICIAL RECEIPT)</small>
+            <!-- <small style="font-weight: normal; color: #666;">(ROOM INVOICE / OFFICIAL RECEIPT)</small> -->
         </div>
     </div>
 
@@ -153,6 +169,10 @@ $final_payable = $grand_total - $booking['deposit_amount'];
         <span>ອອກ:</span>
         <span><?php echo date('d/m/Y', strtotime($booking['check_out_date'])); ?></span>
     </div>
+    <div class="info-row">
+        <span>ຈຳນວນຄືນ:</span>
+        <span><?php echo $nights; ?> ຄືນ</span>
+    </div>
 
     <table class="item-table">
         <thead>
@@ -163,7 +183,7 @@ $final_payable = $grand_total - $booking['deposit_amount'];
         </thead>
         <tbody>
             <tr>
-                <td>ຄ່າຫ້ອງພັກ</td>
+                <td>ຄ່າຫ້ອງພັກ (<?php echo $nights; ?> ຄືນ)</td>
                 <td class="text-right"><?php echo formatCurrency($booking['total_price']); ?></td>
             </tr>
             <?php if(count($services) > 0): ?>
@@ -182,10 +202,6 @@ $final_payable = $grand_total - $booking['deposit_amount'];
         </tbody>
     </table>
 
-    <div class="divider"></div>
-
-    <div class="divider"></div>
-
     <div class="total-section">
         <?php if($tax_percent > 0): ?>
         <div class="info-row" style="font-weight: normal; font-size: 12px;">
@@ -194,17 +210,69 @@ $final_payable = $grand_total - $booking['deposit_amount'];
         </div>
         <?php endif; ?>
         <div class="info-row">
-            <span>ລວມທັງໝົດ:</span>
+            <span><?php echo $lang['grand_total'] ?? 'ລວມທັງໝົດ'; ?>:</span>
             <span><?php echo formatCurrency($grand_total); ?></span>
         </div>
-        <div class="info-row" style="border-top: 1px solid #000; margin-top: 5px; padding-top: 5px; font-size: 16px; color: red;">
-            <span>ຍອດຈ່າຍຕົວຈິງ:</span>
-            <span><?php echo number_format($grand_total); ?> <?php echo $currency_symbol; ?></span>
+        
+        <?php 
+        $url_received = isset($_GET['received']) && $_GET['received'] !== '' ? (float)$_GET['received'] : null;
+        $url_change = isset($_GET['change']) && $_GET['change'] !== '' ? (float)$_GET['change'] : null;
+        
+        $transaction_amount = 0;
+        $is_deposit_receipt = false;
+        $show_received_change = true;
+        
+        if ($url_received !== null) {
+            // Checkout payment via URL
+            $received_val = $url_received > 0 ? $url_received : $final_payable;
+            $change_val = $url_change !== null ? $url_change : 0;
+            $transaction_amount = $final_payable;
+        } elseif ($booking['status'] === 'Completed') {
+            // Checked out
+            $received_val = ($booking['amount_received'] > 0) ? $booking['amount_received'] : $final_payable;
+            $change_val = ($booking['amount_received'] > 0) ? $booking['change_amount'] : 0;
+            $transaction_amount = $final_payable;
+        } else {
+            // Occupied - Printing at check-in or previewing
+            if ($booking['deposit_amount'] > 0 && $booking['amount_received'] > 0 && $booking['food_charge'] == 0) {
+                // Check-in receipt (no food ordered yet)
+                $is_deposit_receipt = true;
+                $transaction_amount = $booking['deposit_amount'];
+                $received_val = $booking['amount_received'];
+                $change_val = $booking['change_amount'];
+            } else {
+                // Previewing bill with food charges before checkout
+                $transaction_amount = $final_payable;
+                $received_val = $final_payable; // Show expected received amount to match math
+                $change_val = 0;
+                $show_received_change = true; // Show it like before
+            }
+        }
+        ?>
+
+        <?php if(!$is_deposit_receipt && $booking['deposit_amount'] > 0): ?>
+        <div class="info-row" style="color: #28a745; font-weight: normal; font-size: 12px;">
+            <span><?php echo $lang['room_fee_paid'] ?? 'ຊຳລະແລ້ວ (ມັດຈຳ)'; ?>:</span>
+            <span><?php echo formatCurrency($booking['deposit_amount']); ?></span>
         </div>
+        <?php endif; ?>
+
+        <div class="info-row" style="border-top: 1px solid #000; margin-top: 5px; padding-top: 5px; font-size: 16px; color: red;">
+            <span><?php echo $is_deposit_receipt ? 'ຍອດຊຳລະຄັ້ງນີ້' : ($lang['actual_paid'] ?? 'ຍອດຈ່າຍຕົວຈິງ'); ?>:</span>
+            <span><?php echo number_format($transaction_amount); ?> <?php echo $currency_symbol; ?></span>
+        </div>
+        
+        <?php if($is_deposit_receipt && $final_payable > 0): ?>
+        <div class="info-row" style="color: #d33; font-weight: normal; font-size: 12px;">
+            <span>ຍັງຄ້າງຊຳລະ:</span>
+            <span><?php echo number_format($final_payable); ?> <?php echo $currency_symbol; ?></span>
+        </div>
+        <?php endif; ?>
     </div>
 
     <div class="divider"></div>
 
+    <?php if(isset($show_received_change) && $show_received_change): ?>
     <?php 
         $pm = $booking['payment_method'] ?? 'ເງິນສົດ';
         if (stripos($pm, 'Cash') !== false || stripos($pm, 'ເງິນສົດ') !== false) {
@@ -214,9 +282,6 @@ $final_payable = $grand_total - $booking['deposit_amount'];
         } else {
             $payment_method_la = $pm;
         }
-
-        $received_val = ($booking['amount_received'] > 0) ? $booking['amount_received'] : $grand_total;
-        $change_val = ($booking['amount_received'] > 0) ? $booking['change_amount'] : 0;
     ?>
     <div class="info-row">
         <span>ວິທີຊຳລະ:</span>
@@ -230,6 +295,7 @@ $final_payable = $grand_total - $booking['deposit_amount'];
         <span>ເງິນທອນ:</span>
         <span style="color: #d9534f; font-size: 14px;"><?php echo number_format($change_val); ?> <?php echo $currency_symbol; ?></span>
     </div>
+    <?php endif; ?>
 
     <div class="footer">
         <?php if(!empty($settings['hotel_qr'])): ?>

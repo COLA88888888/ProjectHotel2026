@@ -91,6 +91,7 @@ $bed_name_col = "bed_type_" . $current_lang;
 $stmt = $pdo->query("SELECT r.*, rt.room_type_name_la, rt.room_type_name_en, rt.room_type_name_cn 
                      FROM rooms r 
                      LEFT JOIN room_types rt ON r.room_type = rt.room_type_name 
+                     GROUP BY r.id
                      ORDER BY r.id DESC");
 $rooms = $stmt->fetchAll();
 

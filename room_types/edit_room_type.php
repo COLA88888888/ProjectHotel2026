@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/db.php';
+require_once '../config/logger.php';
 
 // Language Selection Logic
 $current_lang = $_SESSION['lang'] ?? 'la';
@@ -41,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update'])) {
 
     $stmt = $pdo->prepare("UPDATE room_types SET room_type_name = ?, room_type_name_la = ?, room_type_name_en = ?, room_type_name_cn = ?, room_type_code = ?, description = ?, description_la = ?, description_en = ?, description_cn = ? WHERE id = ?");
     if ($stmt->execute([$room_type_name, $room_type_name_la, $room_type_name_en, $room_type_name_cn, $room_type_code, $description, $description_la, $description_en, $description_cn, $id])) {
+        logActivity($pdo, "ແກ້ໄຂປະເພດຫ້ອງ", "ປະເພດຫ້ອງ: $room_type_name_la ($room_type_code)");
         $_SESSION['success'] = $lang['save_success'];
         header("Location: form_room_types.php");
         exit();

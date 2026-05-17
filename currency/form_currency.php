@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/db.php';
+require_once '../config/logger.php';
 
 // Language Selection Logic
 $current_lang = $_SESSION['lang'] ?? 'la';
@@ -29,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_currency'])) {
     if (!empty($code) && !empty($name_la)) {
         $stmt = $pdo->prepare("INSERT INTO currency (currency_code, currency_name, currency_name_la, currency_name_en, currency_name_cn, exchange_rate, symbol, symbol_la, symbol_en, symbol_cn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         if ($stmt->execute([$code, $name, $name_la, $name_en, $name_cn, $rate, $symbol, $symbol_la, $symbol_en, $symbol_cn])) {
+            logActivity($pdo, "ເພີ່ມສະກຸນເງິນໃໝ່", "ສະກຸນເງິນ: $name_la ($code), ອັດຕາ: 1 $code = " . number_format($rate) . " Kip");
             $_SESSION['success'] = $lang['save_success'];
         } else {
             $_SESSION['error'] = $lang['error_occurred'];
@@ -53,7 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_currency'])) {
     if ($id > 0) {
         $stmt = $pdo->prepare("UPDATE currency SET currency_code = ?, currency_name = ?, currency_name_la = ?, currency_name_en = ?, currency_name_cn = ?, exchange_rate = ?, symbol = ?, symbol_la = ?, symbol_en = ?, symbol_cn = ? WHERE id = ?");
         if ($stmt->execute([$code, $name_la, $name_la, $name_en, $name_cn, $rate, $symbol_la, $symbol_la, $symbol_en, $symbol_cn, $id])) {
-            $_SESSION['success'] = $lang['save_success'];
+            logActivity($pdo, "ແກ້ໄຂສະກຸນເງິນ", "ສະກຸນເງິນ: $name_la ($code), ອັດຕາ: 1 $code = " . number_format($rate) . " Kip");
+            $_SESSION['success'] = "ອັບເດດສະກຸນເງິນສຳເລັດ! ສະກຸນເງິນ: " . htmlspecialchars($name_la) . " (" . htmlspecialchars($code) . ")";
         }
     }
     header("Location: form_currency.php");
@@ -65,7 +68,7 @@ if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
     
     // Prevent deleting default currency (LAK)
-    $stmtCheck = $pdo->prepare("SELECT is_default FROM currency WHERE id = ?");
+    $stmtCheck = $pdo->prepare("SELECT * FROM currency WHERE id = ?");
     $stmtCheck->execute([$id]);
     $curr = $stmtCheck->fetch();
 
@@ -74,6 +77,9 @@ if (isset($_GET['delete'])) {
     } else {
         $stmt = $pdo->prepare("DELETE FROM currency WHERE id = ?");
         if ($stmt->execute([$id])) {
+            if ($curr) {
+                logActivity($pdo, "ລຶບສະກຸນເງິນ", "ລຶບສະກຸນເງິນ: " . $curr['currency_name'] . " (" . $curr['currency_code'] . ")");
+            }
             $_SESSION['success'] = $lang['delete_success'];
         }
     }
@@ -94,8 +100,21 @@ if (isset($_GET['set_default'])) {
         $stmt = $pdo->prepare("UPDATE currency SET is_default = 1 WHERE id = ?");
         $stmt->execute([$id]);
         
+        // Fetch currency details for the success message
+        $stmtGet = $pdo->prepare("SELECT currency_name, currency_code FROM currency WHERE id = ?");
+        $stmtGet->execute([$id]);
+        $selected_curr = $stmtGet->fetch();
+        
         $pdo->commit();
-        $_SESSION['success'] = $lang['save_success'];
+        
+        if ($selected_curr) {
+            $c_name = htmlspecialchars($selected_curr['currency_name']);
+            $c_code = htmlspecialchars($selected_curr['currency_code']);
+            logActivity($pdo, "ຕັ້ງສະກຸນເງິນຫຼັກ", "ສະກຸນເງິນ: $c_name ($c_code)");
+            $_SESSION['success'] = "ອັບເດດສະກຸນເງິນສຳເລັດ! ສະກຸນເງິນຫຼັກປັດຈຸບັນແມ່ນ: $c_name ($c_code)";
+        } else {
+            $_SESSION['success'] = $lang['save_success'];
+        }
     } catch (Exception $e) {
         $pdo->rollBack();
         $_SESSION['error'] = $lang['error_occurred'];

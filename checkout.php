@@ -18,8 +18,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_checkout'])) {
     $booking_id = (int)$_POST['booking_id'];
     $room_id = (int)$_POST['room_id'];
     $payment_method = $_POST['payment_method'];
-    $amount_received = (float)str_replace(',', '', $_POST['amount_received']);
-    $change_amount = (float)str_replace(',', '', $_POST['change_amount']);
+    
+    // Fetch rate
+    $rate = (float)($defCurr['exchange_rate'] ?? 1);
+    if ($rate <= 0) $rate = 1;
+    
+    $amount_received = (float)str_replace(',', '', $_POST['amount_received']) * $rate;
+    $change_amount = (float)str_replace(',', '', $_POST['change_amount']) * $rate;
     
     // Update booking status and payment info
     $stmt = $pdo->prepare("UPDATE bookings SET status = 'Completed', payment_method = ?, amount_received = ?, change_amount = ? WHERE id = ?");
@@ -48,6 +53,7 @@ $stmt = $pdo->query("
     JOIN rooms r ON b.room_id = r.id 
     JOIN room_types rt ON r.room_type = rt.room_type_name
     WHERE b.status = 'Occupied'
+    GROUP BY b.id
     ORDER BY r.room_number ASC
 ");
 $active_bookings = $stmt->fetchAll();
@@ -346,23 +352,49 @@ if (isset($_GET['booking_id'])) {
                                         <?php endforeach; ?>
                                     <?php endif; ?>
                                     
-                                    <!-- Calculation Rows -->
                                     <?php 
                                         $subtotal = $selected_booking['total_price'] + $selected_booking['food_charge'];
                                         $tax_amount = round($subtotal * ($tax_percent / 100));
                                         $total_after_tax = $subtotal + $tax_amount;
-                                        $grand_total = $total_after_tax;
+                                        $grand_total = $total_after_tax - ($selected_booking['deposit_amount'] ?? 0);
+                                        if ($grand_total < 0) $grand_total = 0;
+                                        
+                                        $rate = (float)($defCurr['exchange_rate'] ?? 1);
+                                        if ($rate <= 0) $rate = 1;
+                                        $is_decimal_curr = in_array($defCurr['currency_code'] ?? 'LAK', ['USD', 'CNY', 'EUR']);
+                                        
+                                        $grand_total_converted = $grand_total / $rate;
+                                        $total_after_tax_converted = $total_after_tax / $rate;
                                     ?>
+                                    
+                                    <!-- Subtotal -->
                                     <tr style="border-top: 2px solid #dee2e6;">
                                         <td colspan="3" class="text-right"><?php echo $lang['subtotal'] ?? 'ລວມຍ່ອຍ'; ?>:</td>
                                         <td class="text-right"><strong><?php echo formatCurrency($subtotal); ?></strong></td>
                                     </tr>
                                     
+                                    <!-- Tax Row -->
                                     <?php if($tax_percent > 0): ?>
-                                    <tr class="text-muted" style="font-size: 0.8rem;">
-                                        <td colspan="3" class="text-right"><?php echo $lang['tax_percent'] ?? 'Tax'; ?> (<?php echo $tax_percent; ?>%):</td>
+                                    <tr class="text-muted" style="font-size: 0.85rem;">
+                                        <td colspan="3" class="text-right"><?php echo $lang['tax_percent'] ?? 'ພາສີ'; ?> (<?php echo $tax_percent; ?>%):</td>
                                         <td class="text-right"><?php echo formatCurrency($tax_amount); ?></td>
                                     </tr>
+                                    <?php endif; ?>
+
+                                    <!-- Total after Tax -->
+                                    <tr class="bg-light font-weight-bold">
+                                        <td colspan="3" class="text-right"><?php echo $lang['total_after_tax'] ?? 'ລາຄາລວມ'; ?>:</td>
+                                        <td class="text-right text-primary"><strong><?php echo formatCurrency($total_after_tax); ?></strong></td>
+                                    </tr>
+                                    
+                                    <!-- Deduct Paid Deposit / Prepayment -->
+                                    <?php if(isset($selected_booking['deposit_amount']) && $selected_booking['deposit_amount'] > 0): ?>
+                                        <tr class="bg-light text-success font-weight-bold">
+                                            <td colspan="3" class="text-right">
+                                                <i class="fas fa-check-circle text-success mr-1"></i> <?php echo $lang['room_fee_paid'] ?? 'ຄ່າຫ້ອງຊຳລະແລ້ວ'; ?>:
+                                            </td>
+                                            <td class="text-right text-success"><?php echo formatCurrency($selected_booking['deposit_amount']); ?></td>
+                                        </tr>
                                     <?php endif; ?>
 
                                     <tr class="bg-dark text-white">
@@ -377,13 +409,15 @@ if (isset($_GET['booking_id'])) {
                             <input type="hidden" name="confirm_checkout" value="1">
                             <input type="hidden" name="booking_id" value="<?php echo $selected_booking['id']; ?>">
                             <input type="hidden" name="room_id" value="<?php echo $selected_booking['room_id']; ?>">
-                            <input type="hidden" id="grand_total_val" value="<?php echo $grand_total; ?>">
+                            <input type="hidden" id="grand_total_val" value="<?php echo number_format($grand_total_converted, $is_decimal_curr ? 2 : 0, '.', ''); ?>">
+                            <input type="hidden" id="total_after_tax_val" value="<?php echo number_format($total_after_tax_converted, $is_decimal_curr ? 2 : 0, '.', ''); ?>">
                             <input type="hidden" id="checkout_status_msg" value="<?php 
                                 if ($today < $checkout_date) echo $lang['not_due_yet'] . "! ";
                                 elseif ($today > $checkout_date) echo $lang['overdue'] . "! ";
                                 else echo "";
                             ?>">
                             
+                            <?php if ($grand_total > 0): ?>
                             <div class="row bg-light p-3 rounded mb-4">
                                 <div class="col-md-12 mb-3 border-bottom pb-2">
                                     <h5 class="text-success"><i class="fas fa-hand-holding-usd"></i> <?php echo $lang['payment_info']; ?> (<?php echo $lang['receive'] ?? 'Receive'; ?> <?php echo $defCurr['currency_name']; ?>)</h5>
@@ -418,10 +452,19 @@ if (isset($_GET['booking_id'])) {
                                     </div>
                                 </div>
                             </div>
+                            <?php else: ?>
+                            <input type="hidden" name="payment_method" value="None">
+                            <input type="hidden" name="amount_received" value="0">
+                            <input type="hidden" name="change_amount" value="0">
+                            <div class="alert alert-success p-3 rounded mb-4 text-center" style="background-color: #d4edda; border-color: #c3e6cb; color: #155724;">
+                                <h5 class="font-weight-bold"><i class="fas fa-check-circle text-success mr-2"></i> <?php echo $lang['no_balance_due'] ?? 'ຊຳລະຄ່າຫ້ອງຄົບຖ້ວນແລ້ວ (ບໍ່ມີຍອດຄ້າງຊຳລະ)'; ?></h5>
+                                <p class="mb-0 text-muted" style="font-size: 0.95rem; color: #155724 !important;"><?php echo $lang['ready_for_checkout'] ?? 'ສາມາດທຳການ Check-out ໄດ້ທັນທີໂດຍບໍ່ມີຄ່າໃຊ້ຈ່າຍເພີ່ມເຕີມ.'; ?></p>
+                            </div>
+                            <?php endif; ?>
                             
                             <div class="row">
                                 <div class="col-12 text-right">
-                                    <a href="print_room_receipt.php?booking_id=<?php echo $selected_booking['id']; ?>" target="_blank" class="btn btn-default mr-2"><i class="fas fa-print"></i> <?php echo $lang['print_bill']; ?></a>
+                                    <button type="button" id="btnPrintBill" class="btn btn-default mr-2"><i class="fas fa-print"></i> <?php echo $lang['print_bill']; ?></button>
                                     <button type="submit" name="confirm_checkout" class="btn btn-success btn-lg">
                                         <i class="fas fa-check-double"></i> <?php echo $lang['checkout'] ?? 'Check-out'; ?>
                                     </button>
@@ -453,18 +496,51 @@ if (isset($_GET['booking_id'])) {
 <script>
 $(document).ready(function() {
     var grandTotal = parseFloat($('#grand_total_val').val()) || 0;
+    var isDecimalCurr = <?php echo $is_decimal_curr ? 'true' : 'false'; ?>;
+
+    function formatMoneyJS(amount) {
+        if (isDecimalCurr) {
+            return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        } else {
+            return Math.round(amount).toLocaleString('en-US');
+        }
+    }
 
     // Full Payment Shortcut
     $('#btn_full_pay').on('click', function() {
-        $('#amount_received').val(grandTotal.toLocaleString('en-US'));
+        $('#amount_received').val(formatMoneyJS(grandTotal));
         calculateChange();
     });
 
     // Number formatting
     $('.number-format').on('input', function(e) {
-        var value = $(this).val().replace(/[^0-9]/g, '');
+        var cleanRegex = isDecimalCurr ? /[^0-9.]/g : /[^0-9]/g;
+        var value = $(this).val().replace(cleanRegex, '');
+        
+        // Prevent multiple dots
+        if (isDecimalCurr) {
+            var parts = value.split('.');
+            if (parts.length > 2) {
+                value = parts[0] + '.' + parts.slice(1).join('');
+            }
+        }
+        
         if (value !== '') {
-            $(this).val(parseInt(value, 10).toLocaleString('en-US'));
+            if (isDecimalCurr && (value.endsWith('.') || (value.includes('.') && value.split('.')[1] === ''))) {
+                $(this).val(value);
+            } else {
+                var num = parseFloat(value);
+                if (!isNaN(num)) {
+                    if (isDecimalCurr) {
+                        var decs = value.includes('.') ? '.' + value.split('.')[1] : '';
+                        $(this).val(Math.floor(num).toLocaleString('en-US') + decs);
+                    } else {
+                        $(this).val(Math.round(num).toLocaleString('en-US'));
+                    }
+                } else {
+                    $(this).val('');
+                }
+            }
         } else {
             $(this).val('');
         }
@@ -473,8 +549,8 @@ $(document).ready(function() {
 
     $('#payment_method').on('change', function() {
         var method = $(this).val();
-        if (method === 'ເງິນໂອນ' || method === 'ບັດ') {
-            $('#amount_received').val(grandTotal.toLocaleString('en-US'));
+        if (method === 'Transfer') {
+            $('#amount_received').val(formatMoneyJS(grandTotal));
             $('#amount_received').prop('readonly', true);
             calculateChange();
         } else {
@@ -488,7 +564,7 @@ $(document).ready(function() {
         var received = parseFloat($('#amount_received').val().replace(/,/g, '')) || 0;
         var change = received - grandTotal;
         if (change < 0) change = 0;
-        $('#change_amount').val(change.toLocaleString('en-US'));
+        $('#change_amount').val(formatMoneyJS(change));
     }
 
     // Show/Hide notify button
@@ -504,7 +580,7 @@ $(document).ready(function() {
     $('#btn_notify_transfer').click(function() {
         const bid = <?php echo $selected_booking['id'] ?? 0; ?>;
         const rnum = '<?php echo $selected_booking['room_number'] ?? ''; ?>';
-        const amt = grandTotal;
+        const amt = parseFloat($('#total_after_tax_val').val()) || 0;
         
         if(bid === 0) return;
 
@@ -534,11 +610,12 @@ $(document).ready(function() {
 
     $('#checkoutForm').on('submit', function(e) {
         e.preventDefault();
-        var received = parseFloat($('#amount_received').val().replace(/,/g, '')) || 0;
-        var method = $('#payment_method').val();
+        var amtReceivedEl = $('#amount_received');
+        var received = amtReceivedEl.length ? (parseFloat(amtReceivedEl.val().replace(/,/g, '')) || 0) : 0;
+        var method = $('#payment_method').val() || 'None';
         var statusMsg = $('#checkout_status_msg').val();
 
-        if (received < grandTotal && method === 'ເງິນສົດ') {
+        if (received < (grandTotal - 0.001) && method === 'Cash') {
             Swal.fire({
                 icon: 'error',
                 title: '<?php echo $lang['insufficient_balance']; ?>',

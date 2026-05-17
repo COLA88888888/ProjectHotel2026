@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/db.php';
+require_once '../config/logger.php';
 
 // Language Selection Logic
 $current_lang = $_SESSION['lang'] ?? 'la';
@@ -27,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save'])) {
 
     $stmt = $pdo->prepare("INSERT INTO room_types (room_type_name, room_type_name_la, room_type_name_en, room_type_name_cn, room_type_code, description, description_la, description_en, description_cn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
     if ($stmt->execute([$room_type_name, $room_type_name_la, $room_type_name_en, $room_type_name_cn, $room_type_code, $description, $description_la, $description_en, $description_cn])) {
+        logActivity($pdo, "ເພີ່ມປະເພດຫ້ອງໃໝ່", "ປະເພດຫ້ອງ: $room_type_name_la ($room_type_code)");
         $_SESSION['success'] = $lang['save_success'];
         header("Location: form_room_types.php");
         exit();
@@ -55,6 +57,7 @@ if (isset($_GET['delete'])) {
         } else {
             $stmt = $pdo->prepare("DELETE FROM room_types WHERE id = ?");
             if ($stmt->execute([$id])) {
+                logActivity($pdo, "ລຶບປະເພດຫ້ອງ", "ລຶບປະເພດຫ້ອງ: $typeName");
                 $_SESSION['success'] = $lang['delete_success'];
             } else {
                 $_SESSION['error'] = "ເກີດຂໍ້ຜິດພາດໃນການລົບ";

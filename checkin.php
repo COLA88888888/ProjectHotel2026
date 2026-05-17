@@ -37,7 +37,8 @@ if ($room_id > 0) {
     exit();
 }
 
-$total_price = $room['price'] * $nights;
+$base_room_price = (float)$room['price'];
+$total_price = $base_room_price * $nights;
 $check_in_date = date('Y-m-d');
 $check_out_date = date('Y-m-d', strtotime("+$nights days"));
 
@@ -47,15 +48,44 @@ $tax_percent = (float)($stmtTax->fetchColumn() ?: 0);
 $tax_amount = round($total_price * ($tax_percent / 100));
 $grand_total = $total_price + $tax_amount;
 
+// Fetch exchange rate and decimal check
+$rate = (float)($defCurr['exchange_rate'] ?? 1);
+if ($rate <= 0) $rate = 1;
+$is_decimal_curr = in_array($defCurr['currency_code'] ?? 'LAK', ['USD', 'CNY', 'EUR']);
+
+// Converted prices for display
+$room_price_converted = $base_room_price / $rate;
+$total_price_converted = $total_price / $rate;
+$tax_amount_converted = $tax_amount / $rate;
+$grand_total_converted = $grand_total / $rate;
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['checkin'])) {
+    $nights = isset($_POST['nights']) ? (int)$_POST['nights'] : $nights;
+    if ($nights < 1) $nights = 1;
+    $total_price = $room['price'] * $nights;
+    $check_out_date = date('Y-m-d', strtotime("+$nights days"));
+
     $customer_name = trim($_POST['customer_name']);
     $customer_phone = trim($_POST['customer_phone']);
     $passport_number = trim($_POST['passport_number']);
     $address = trim($_POST['address']);
     $guest_count = (int)$_POST['guest_count'];
-    $deposit_amount = (float)str_replace(',', '', $_POST['deposit_amount']);
-    
+    $deposit_amount = (float)str_replace(',', '', $_POST['deposit_amount']) * $rate;
     $payment_method = $_POST['payment_method'];
+    $amount_received = 0.00;
+    $change_amount = 0.00;
+    if (isset($_POST['payment_status']) && $_POST['payment_status'] === 'Unpaid') {
+        $deposit_amount = 0.00;
+        $payment_method = 'ຍັງບໍ່ຈ່າຍ (Pay at Checkout)';
+    } else {
+        if ($payment_method === 'Cash') {
+            $amount_received = isset($_POST['amount_received']) ? (float)str_replace(',', '', $_POST['amount_received']) * $rate : 0.00;
+            $change_amount = isset($_POST['change_amount']) ? (float)str_replace(',', '', $_POST['change_amount']) * $rate : 0.00;
+        } else {
+            $amount_received = $deposit_amount;
+            $change_amount = 0.00;
+        }
+    }
     
     // Generate Bill Number: YYYYNNNN (e.g. 20260001)
     $year = date('Y');
@@ -72,16 +102,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['checkin'])) {
     $bill_number = $year . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
 
     // Save to bookings table
-    $stmt = $pdo->prepare("INSERT INTO bookings (room_id, customer_name, customer_phone, passport_number, address, guest_count, check_in_date, check_out_date, total_price, deposit_amount, payment_method, status, bill_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Occupied', ?)");
+    $stmt = $pdo->prepare("INSERT INTO bookings (room_id, customer_name, customer_phone, passport_number, address, guest_count, check_in_date, check_out_date, total_price, deposit_amount, payment_method, amount_received, change_amount, status, bill_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Occupied', ?)");
     
-    if ($stmt->execute([$room_id, $customer_name, $customer_phone, $passport_number, $address, $guest_count, $check_in_date, $check_out_date, $total_price, $deposit_amount, $payment_method, $bill_number])) {
+    if ($stmt->execute([$room_id, $customer_name, $customer_phone, $passport_number, $address, $guest_count, $check_in_date, $check_out_date, $total_price, $deposit_amount, $payment_method, $amount_received, $change_amount, $bill_number])) {
         $booking_id = $pdo->lastInsertId();
         // Update room status to Occupied
         $updateRoom = $pdo->prepare("UPDATE rooms SET status = 'Occupied' WHERE id = ?");
         $updateRoom->execute([$room_id]);
         
         $_SESSION['success'] = $lang['checkin_success'];
-        $_SESSION['print_booking'] = $booking_id;
+        if ($deposit_amount > 0) {
+            $_SESSION['print_booking'] = $booking_id;
+        }
         
         logActivity($pdo, $lang['log_checkin'], $lang['customer_label'] . ": $customer_name, " . $lang['room'] . ": " . $room['room_number']);
         
@@ -149,27 +181,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['checkin'])) {
                     
                     <ul class="list-group list-group-unbordered mb-3 text-left">
                         <li class="list-group-item">
-                            <b><?php echo $lang['price']; ?> / <?php echo $lang['nights_count']; ?>:</b> <a class="float-right text-dark"><?php echo number_format($room['price']); ?> ₭</a>
+                            <b><?php echo $lang['price']; ?> / <?php echo $lang['nights_count']; ?>:</b> <a class="float-right text-dark"><?php echo number_format($room_price_converted, $is_decimal_curr ? 2 : 0); ?> <?php echo htmlspecialchars($defCurr['symbol'] ?? '₭'); ?></a>
                         </li>
                         <li class="list-group-item">
-                            <b><?php echo $lang['nights']; ?>:</b> <a class="float-right text-dark"><?php echo $nights; ?> <?php echo $lang['nights_count']; ?></a>
+                            <b><?php echo $lang['nights']; ?>:</b> <a class="float-right text-dark"><span id="summary_nights"><?php echo $nights; ?></span> <?php echo $lang['nights_count']; ?></a>
                         </li>
                         <li class="list-group-item">
                             <b><?php echo $lang['checkin_date']; ?>:</b> <a class="float-right text-success"><?php echo date('d/m/Y', strtotime($check_in_date)); ?></a>
                         </li>
                         <li class="list-group-item">
-                            <b><?php echo $lang['checkout_date']; ?>:</b> <a class="float-right text-danger"><?php echo date('d/m/Y', strtotime($check_out_date)); ?></a>
+                            <b><?php echo $lang['checkout_date']; ?>:</b> <a class="float-right text-danger" id="summary_checkout_date"><?php echo date('d/m/Y', strtotime($check_out_date)); ?></a>
                         </li>
                         <li class="list-group-item bg-light">
-                            <b><?php echo $lang['subtotal']; ?>:</b> <a class="float-right text-dark"><?php echo number_format($total_price); ?> ₭</a>
+                            <b><?php echo $lang['subtotal']; ?>:</b> <a class="float-right text-dark" id="summary_subtotal"><?php echo number_format($total_price_converted, $is_decimal_curr ? 2 : 0); ?> <?php echo htmlspecialchars($defCurr['symbol'] ?? '₭'); ?></a>
                         </li>
                         <?php if($tax_percent > 0): ?>
                         <li class="list-group-item">
-                            <b><?php echo $lang['tax_percent'] ?? 'Tax'; ?> (<?php echo $tax_percent; ?>%):</b> <a class="float-right text-info"><?php echo number_format($tax_amount); ?> ₭</a>
+                            <b><?php echo $lang['tax_percent'] ?? 'Tax'; ?> (<?php echo $tax_percent; ?>%):</b> <a class="float-right text-info" id="summary_tax_amount"><?php echo number_format($tax_amount_converted, $is_decimal_curr ? 2 : 0); ?> <?php echo htmlspecialchars($defCurr['symbol'] ?? '₭'); ?></a>
                         </li>
                         <?php endif; ?>
                         <li class="list-group-item bg-dark">
-                            <b><?php echo $lang['grand_total']; ?>:</b> <a class="float-right text-warning font-weight-bold" style="font-size: 1.1rem;"><?php echo number_format($grand_total); ?> ₭</a>
+                            <b><?php echo $lang['grand_total']; ?>:</b> <a class="float-right text-warning font-weight-bold" style="font-size: 1.1rem;" id="summary_grand_total"><?php echo number_format($grand_total_converted, $is_decimal_curr ? 2 : 0); ?> <?php echo htmlspecialchars($defCurr['symbol'] ?? '₭'); ?></a>
                         </li>
                     </ul>
                 </div>
@@ -211,7 +243,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['checkin'])) {
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label><?php echo $lang['passport']; ?></label>
                                     <div class="input-group">
@@ -222,7 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['checkin'])) {
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label><?php echo $lang['guests']; ?></label>
                                     <div class="input-group">
@@ -230,6 +262,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['checkin'])) {
                                             <span class="input-group-text"><i class="fas fa-users"></i></span>
                                         </div>
                                         <input type="number" name="guest_count" class="form-control" value="1" min="1">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label><?php echo $lang['nights'] ?? 'ຈຳນວນຄືນ'; ?> <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-moon"></i></span>
+                                        </div>
+                                        <input type="number" name="nights" id="nights_input" class="form-control" value="<?php echo $nights; ?>" min="1" required>
                                     </div>
                                 </div>
                             </div>
@@ -243,25 +286,61 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['checkin'])) {
                             <div class="col-md-12 mt-2">
                                 <h5 class="text-info border-bottom pb-2"><i class="fas fa-money-bill-wave"></i> <?php echo $lang['payment_info']; ?></h5>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label><?php echo $lang['payment_status'] ?? 'ສະຖານະການຊຳລະ'; ?> <span class="text-danger">*</span></label>
+                                    <select name="payment_status" id="payment_status" class="form-control" required>
+                                        <option value="Paid"><?php echo $lang['paid'] ?? 'ຈ່າຍແລ້ວ'; ?></option>
+                                        <option value="Unpaid"><?php echo $lang['unpaid'] ?? 'ຍັງບໍ່ຈ່າຍ'; ?></option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4" id="payment_method_group">
                                 <div class="form-group">
                                     <label><?php echo $lang['payment_method_label']; ?> <span class="text-danger">*</span></label>
-                                    <select name="payment_method" class="form-control" required>
+                                    <select name="payment_method" id="payment_method" class="form-control" required>
                                         <option value="Cash"><?php echo $lang['cash'] ?? 'Cash'; ?></option>
                                         <option value="Transfer"><?php echo $lang['transfer'] ?? 'Transfer'; ?></option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
-                                    <label><?php echo $lang['grand_total']; ?> (₭) <span class="text-danger">*</span></label>
+                                    <label><?php echo $lang['grand_total']; ?> (<?php echo htmlspecialchars($defCurr['symbol'] ?? '₭'); ?>) <span class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <div class="input-group-prepend">
-                                            <span class="input-group-text">₭</span>
+                                            <span class="input-group-text"><?php echo htmlspecialchars($defCurr['symbol'] ?? '₭'); ?></span>
                                         </div>
-                                        <input type="text" name="deposit_amount" class="form-control number-format" value="<?php echo number_format($grand_total); ?>" required readonly>
+                                        <input type="text" name="deposit_amount" id="deposit_amount" class="form-control number-format" value="<?php echo number_format($grand_total_converted, $is_decimal_curr ? 2 : 0); ?>" required readonly>
                                     </div>
-                                    <small class="text-muted">ລວມພາສີອາກອນແລ້ວ (<?php echo $nights; ?> ຄືນ)</small>
+                                    <!-- <small class="text-muted">ລວມພາສີອາກອນແລ້ວ (<?php echo $nights; ?> ຄືນ)</small> -->
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-12" id="cash_details_group" style="display: none;">
+                                <div class="row bg-light p-3 rounded mb-3 border">
+                                    <div class="col-md-6 col-12">
+                                        <div class="form-group mb-md-0">
+                                            <label class="text-success font-weight-bold"><i class="fas fa-hand-holding-usd"></i> <?php echo $lang['amount_received_label'] ?? 'ຮັບເງິນມາ'; ?> (<?php echo htmlspecialchars($defCurr['symbol'] ?? '₭'); ?>) <span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text bg-success text-white"><?php echo htmlspecialchars($defCurr['symbol'] ?? '₭'); ?></span>
+                                                </div>
+                                                <input type="text" name="amount_received" id="received_amount_input" class="form-control number-format" style="font-size: 1.1rem; font-weight: bold;" placeholder="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-12">
+                                        <div class="form-group mb-0">
+                                            <label class="text-danger font-weight-bold"><i class="fas fa-coins"></i> <?php echo $lang['change_amount_label'] ?? 'ເງິນທອນ'; ?> (<?php echo htmlspecialchars($defCurr['symbol'] ?? '₭'); ?>)</label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text bg-danger text-white"><?php echo htmlspecialchars($defCurr['symbol'] ?? '₭'); ?></span>
+                                                </div>
+                                                <input type="text" name="change_amount" id="change_amount_display" class="form-control text-danger font-weight-bold" style="font-size: 1.1rem; background-color: #fff;" value="0" readonly>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -284,11 +363,128 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['checkin'])) {
 
 <script>
 $(document).ready(function() {
+    var roomPrice = <?php echo $room_price_converted; ?>;
+    var taxPercent = <?php echo (float)$tax_percent; ?>;
+    var checkInDateStr = "<?php echo $check_in_date; ?>";
+    var isDecimalCurr = <?php echo $is_decimal_curr ? 'true' : 'false'; ?>;
+
+    function formatMoneyJS(amount) {
+        if (isDecimalCurr) {
+            return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        } else {
+            return Math.round(amount).toLocaleString('en-US');
+        }
+    }
+
+    function updateCalculations() {
+        var nights = parseInt($('#nights_input').val()) || 1;
+        if (nights < 1) nights = 1;
+        
+        var subtotal = roomPrice * nights;
+        var taxAmount = Math.round(subtotal * (taxPercent / 100) * 100) / 100;
+        var grandTotal = subtotal + taxAmount;
+        
+        // Calculate new checkout date
+        var checkInDate = new Date(checkInDateStr);
+        checkInDate.setDate(checkInDate.getDate() + nights);
+        var day = ("0" + checkInDate.getDate()).slice(-2);
+        var month = ("0" + (checkInDate.getMonth() + 1)).slice(-2);
+        var year = checkInDate.getFullYear();
+        var formattedCheckoutDate = day + '/' + month + '/' + year;
+
+        // Update summary card
+        var currSymbol = " <?php echo htmlspecialchars($defCurr['symbol'] ?? '₭'); ?>";
+        $('#summary_nights').text(nights);
+        $('#summary_checkout_date').text(formattedCheckoutDate);
+        $('#summary_subtotal').text(formatMoneyJS(subtotal) + currSymbol);
+        $('#summary_tax_amount').text(formatMoneyJS(taxAmount) + currSymbol);
+        $('#summary_grand_total').text(formatMoneyJS(grandTotal) + currSymbol);
+        
+        // Update payment inputs
+        if ($('#payment_status').val() === 'Paid') {
+            $('#deposit_amount').val(formatMoneyJS(grandTotal));
+        }
+        calculateCheckinChange();
+    }
+
+    function calculateCheckinChange() {
+        var grandTotal = parseFloat($('#deposit_amount').val().replace(/,/g, '')) || 0;
+        var received = parseFloat($('#received_amount_input').val().replace(/,/g, '')) || 0;
+        
+        var change = received - grandTotal;
+        if (change < 0) change = 0;
+        
+        $('#change_amount_display').val(formatMoneyJS(change));
+    }
+
+    function toggleCashDetails() {
+        var status = $('#payment_status').val();
+        var method = $('#payment_method').val();
+        
+        if (status === 'Paid' && method === 'Cash') {
+            $('#cash_details_group').slideDown();
+            calculateCheckinChange();
+        } else {
+            $('#cash_details_group').slideUp();
+        }
+    }
+
+    // Toggle payment method and amount depending on payment status
+    $('#payment_status').on('change', function() {
+        if ($(this).val() === 'Unpaid') {
+            $('#deposit_amount').val('0');
+            $('#payment_method_group').hide();
+        } else {
+            updateCalculations();
+            $('#payment_method_group').show();
+        }
+        toggleCashDetails();
+    });
+
+    $('#payment_method').on('change', function() {
+        toggleCashDetails();
+    });
+
+    $('#received_amount_input').on('input', function() {
+        calculateCheckinChange();
+    });
+
+    // Run toggle on load
+    toggleCashDetails();
+
+    $('#nights_input').on('input change', function() {
+        updateCalculations();
+    });
+
     // Number formatting
     $('.number-format').on('input', function(e) {
-        var value = $(this).val().replace(/[^0-9]/g, '');
+        var cleanRegex = isDecimalCurr ? /[^0-9.]/g : /[^0-9]/g;
+        var value = $(this).val().replace(cleanRegex, '');
+        
+        // Prevent multiple dots
+        if (isDecimalCurr) {
+            var parts = value.split('.');
+            if (parts.length > 2) {
+                value = parts[0] + '.' + parts.slice(1).join('');
+            }
+        }
+        
         if (value !== '') {
-            $(this).val(parseInt(value, 10).toLocaleString('en-US'));
+            if (isDecimalCurr && (value.endsWith('.') || (value.includes('.') && value.split('.')[1] === ''))) {
+                $(this).val(value);
+            } else {
+                var num = parseFloat(value);
+                if (!isNaN(num)) {
+                    if (isDecimalCurr) {
+                        var decs = value.includes('.') ? '.' + value.split('.')[1] : '';
+                        $(this).val(Math.floor(num).toLocaleString('en-US') + decs);
+                    } else {
+                        $(this).val(Math.round(num).toLocaleString('en-US'));
+                    }
+                } else {
+                    $(this).val('0');
+                }
+            }
         } else {
             $(this).val('0');
         }

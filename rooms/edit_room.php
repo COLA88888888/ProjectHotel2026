@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../config/db.php';
+require_once '../config/logger.php';
 
 // Language Selection Logic
 $current_lang = $_SESSION['lang'] ?? 'la';
@@ -43,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update'])) {
 
     $stmt = $pdo->prepare("UPDATE rooms SET room_number = ?, room_type = ?, bed_type = ?, price = ?, status = ?, housekeeping_status = ? WHERE id = ?");
     if ($stmt->execute([$room_number, $room_type, $bed_type, $price, $status, $housekeeping_status, $id])) {
+        logActivity($pdo, "ແກ້ໄຂຂໍ້ມູນຫ້ອງ", "ເລກຫ້ອງ: $room_number, ປະເພດ: $room_type, ລາຄາ: " . number_format((float)$price) . " ກີບ");
         $_SESSION['success'] = $lang['save_success'];
         header("Location: select_rooms.php");
         exit();

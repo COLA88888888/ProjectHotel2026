@@ -36,18 +36,26 @@ while ($row = $stmtLow->fetch()) {
 }
 
 // 2. New Room Service Orders (Last 15 minutes)
-$stmtService = $pdo->query("SELECT id, item_name, created_at FROM room_services WHERE created_at >= NOW() - INTERVAL 15 MINUTE ORDER BY id DESC LIMIT 5");
+$stmtService = $pdo->query("
+    SELECT MAX(id) as max_id, 
+           MAX(created_at) as created_at, 
+           GROUP_CONCAT(CONCAT(item_name, ' (x', qty, ')') SEPARATOR '<br>') as grouped_items 
+    FROM room_services 
+    WHERE created_at >= NOW() - INTERVAL 15 MINUTE 
+    GROUP BY booking_id, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i')
+    ORDER BY max_id DESC LIMIT 5
+");
 $latest_order_id = 0;
 $first = true;
 while ($row = $stmtService->fetch()) {
     if ($first) {
-        $latest_order_id = $row['id'];
+        $latest_order_id = $row['max_id'];
         $first = false;
     }
     $notifications[] = [
         'type' => 'room_service',
         'title' => 'ມີລາຍການສັ່ງໃໝ່!',
-        'text' => $row['item_name'] . ' (' . date('H:i', strtotime($row['created_at'])) . ')',
+        'text' => $row['grouped_items'] . ' (' . date('H:i', strtotime($row['created_at'])) . ')',
         'icon' => 'fas fa-utensils',
         'color' => 'text-info',
         'link' => 'room_service.php'

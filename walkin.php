@@ -30,14 +30,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
         $stmt = $pdo->prepare("SELECT r.*, rt.room_type_name_la, rt.room_type_name_en, rt.room_type_name_cn 
                                FROM rooms r 
                                LEFT JOIN room_types rt ON r.room_type = rt.room_type_name
-                               WHERE r.status = 'Available' AND (r.housekeeping_status = 'ພ້ອມໃຊ້ງານ' OR r.housekeeping_status = 'Ready')");
+                               WHERE r.status = 'Available' AND (r.housekeeping_status = 'ພ້ອມໃຊ້ງານ' OR r.housekeeping_status = 'Ready')
+                               GROUP BY r.id");
         $stmt->execute();
     } else {
         // Find available rooms by type
         $stmt = $pdo->prepare("SELECT r.*, rt.room_type_name_la, rt.room_type_name_en, rt.room_type_name_cn 
                                FROM rooms r 
                                LEFT JOIN room_types rt ON r.room_type = rt.room_type_name
-                               WHERE r.room_type = ? AND r.status = 'Available' AND (r.housekeeping_status = 'ພ້ອມໃຊ້ງານ' OR r.housekeeping_status = 'Ready')");
+                               WHERE r.room_type = ? AND r.status = 'Available' AND (r.housekeeping_status = 'ພ້ອມໃຊ້ງານ' OR r.housekeeping_status = 'Ready')
+                               GROUP BY r.id");
         $stmt->execute([$selected_type]);
     }
     
@@ -135,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
                     icon: 'success',
                     title: '<?php echo $lang['ok']; ?>',
                     text: '<?php echo $_SESSION['success']; ?>',
-                    showConfirmButton: true,
+                    showConfirmButton: <?php echo isset($_SESSION['print_booking']) ? 'true' : 'false'; ?>,
                     confirmButtonText: '<i class="fas fa-print"></i> <?php echo $lang['print_bill']; ?>',
                     showCancelButton: true,
                     cancelButtonText: '<?php echo $lang['close']; ?>',

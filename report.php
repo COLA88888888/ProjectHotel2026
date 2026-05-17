@@ -2,6 +2,8 @@
 session_start();
 require_once 'config/db.php';
 
+
+
 // Language Selection Logic
 $current_lang = $_SESSION['lang'] ?? 'la';
 $lang_file = "lang/{$current_lang}.php";
@@ -95,45 +97,8 @@ $total_guests = $stmtGuests->fetch()['total_guests'] ?? 0;
 // 5. Available Rooms
 $available_rooms = $pdo->query("SELECT COUNT(*) FROM rooms WHERE status = 'Available' AND (housekeeping_status = 'ພ້ອມໃຊ້ງານ' OR housekeeping_status = 'Ready')")->fetchColumn() ?: 0;
 
-// Get recent transactions (Last 10 completed bookings) with localized room type
 $current_lang = $_SESSION['lang'] ?? 'la';
 $room_type_col = "room_type_name_" . $current_lang;
-
-$stmtRecent = $pdo->prepare("
-    SELECT b.*, r.room_number, rt.$room_type_col as room_type_localized, rt.room_type_name as room_type_base
-    FROM bookings b 
-    JOIN rooms r ON b.room_id = r.id 
-    JOIN room_types rt ON r.room_type = rt.room_type_name
-    WHERE DATE(b.check_in_date) BETWEEN ? AND ?
-    ORDER BY b.id DESC
-");
-$stmtRecent->execute([$start_date, $end_date]);
-$recent_bookings = $stmtRecent->fetchAll();
-
-// Fetch Currently Unavailable Rooms (Booked Today or Occupied/Staying)
-$today_val = date('Y-m-d');
-$stmtUnavailable = $pdo->query("
-    SELECT b.*, r.room_number, rt.$room_type_col as room_type_localized, rt.room_type_name as room_type_base
-    FROM bookings b 
-    JOIN rooms r ON b.room_id = r.id 
-    JOIN room_types rt ON r.room_type = rt.room_type_name
-    WHERE b.status IN ('Occupied', 'Checked In')
-    OR (b.status = 'Booked' AND b.check_in_date <= '$today_val' AND b.check_out_date > '$today_val')
-    ORDER BY b.status DESC, b.check_in_date ASC
-");
-$unavailable_list = $stmtUnavailable->fetchAll();
-
-// Get recent POS transactions
-$prod_name_col = "prod_name_" . $current_lang;
-$stmtRecentPos = $pdo->prepare("
-    SELECT o.*, p.prod_name, p.$prod_name_col as prod_name_localized, p.category 
-    FROM orders o 
-    JOIN products p ON o.prod_id = p.prod_id 
-    WHERE DATE(o.created_at) BETWEEN ? AND ?
-    ORDER BY o.order_id DESC
-");
-$stmtRecentPos->execute([$start_date, $end_date]);
-$recent_pos = $stmtRecentPos->fetchAll();
 
 // Fetch Monthly Data for the last 6 months for the Chart
 $months = [];
@@ -201,11 +166,13 @@ while($row = $stmtRT->fetch()) {
     <!-- Bootstrap 4 -->
     <link rel="stylesheet" href="plugins/bootstrap/css/bootstrap.min.css">
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="plugins/fontawesome-free-5.15.3-web/css/all.min.css">
+    <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
     <!-- AdminLTE -->
     <link rel="stylesheet" href="dist/css/adminlte.min.css">
     <!-- DataTables -->
     <link rel="stylesheet" href="plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="sweetalert/dist/sweetalert2.min.css">
     <!-- Noto Sans Lao Looped -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -433,186 +400,6 @@ while($row = $stmtRT->fetch()) {
 
 
 
-    <!-- Occupancy Rate Row -->
-    <?php if($type == 'all' || $type == 'finance'): ?>
-    <div class="row">
-        <div class="col-12 mb-4">
-            <div class="card card-dark card-outline shadow-sm">
-                <div class="card-header bg-white">
-                    <h3 class="card-title font-weight-bold"><i class="fas fa-percent text-dark"></i> <?php echo $lang['occupancy_rate_title']; ?></h3>
-                </div>
-                <div class="card-body">
-                    <canvas id="occupancyChart" style="min-height: 250px; height: 300px; max-height: 300px; max-width: 100%;"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- Unavailable Rooms Table -->
-    <?php if($type == 'all' || $type == 'room_history'): ?>
-    <div class="row mb-4" id="unavailableRooms">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-danger text-white">
-                    <h3 class="card-title"><i class="fas fa-door-closed"></i> <?php echo $lang['unavailable_rooms_report']; ?></h3>
-                </div>
-                <div class="card-body p-2 p-md-3">
-                    <div class="table-responsive">
-                    <table id="unavailableTable" class="table table-bordered table-striped text-center mb-0" style="min-width: 650px;">
-                        <thead class="bg-light">
-                            <tr>
-                                <th><?php echo $lang['room_number_header']; ?></th>
-                                <th><?php echo $lang['customer_name_header']; ?></th>
-                                <th><?php echo $lang['status_header']; ?></th>
-                                <th><?php echo $lang['check_in_header']; ?></th>
-                                <th><?php echo $lang['check_out_header']; ?></th>
-                                <th><?php echo $lang['nights_header']; ?></th>
-                                <th><?php echo $lang['total_header']; ?></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if(count($unavailable_list) > 0): ?>
-                                <?php foreach($unavailable_list as $row): ?>
-                                    <tr>
-                                        <td><strong><?php echo htmlspecialchars($row['room_number']); ?></strong><br><small><?php echo htmlspecialchars($row['room_type_localized'] ?: $row['room_type_base']); ?></small></td>
-                                        <td class="text-left font-weight-bold"><?php echo htmlspecialchars($row['customer_name']); ?></td>
-                                        <td>
-                                            <?php if($row['status'] == 'Booked'): ?>
-                                                <span class="badge badge-primary px-3"><i class="fas fa-calendar-check"></i> <?php echo $lang['booked']; ?></span>
-                                            <?php else: ?>
-                                                <span class="badge badge-warning text-white px-3"><i class="fas fa-clock"></i> <?php echo $lang['occupied']; ?></span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="text-success"><?php echo date('d/m/Y', strtotime($row['check_in_date'])); ?></td>
-                                        <td class="text-danger"><?php echo date('d/m/Y', strtotime($row['check_out_date'])); ?></td>
-                                        <td>
-                                            <?php 
-                                                $diff = date_diff(date_create($row['check_in_date']), date_create($row['check_out_date']));
-                                                echo $diff->format("%a"); 
-                                            ?>
-                                        </td>
-                                        <td class="text-right font-weight-bold"><?php echo formatCurrency($row['total_price']); ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                <td colspan="7" class="py-4 text-muted"><?php echo $lang['table_zero_records']; ?></td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- Recent Transactions Table -->
-    <?php if($type == 'all' || $type == 'room_history'): ?>
-    <div class="row mt-4" id="roomHistory">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <h3 class="card-title"><i class="fas fa-bed text-primary"></i> <?php echo $lang['recent_booking_history'] ?? 'ປະຫວັດການຈອງຫ້ອງພັກຫຼ້າສຸດ'; ?></h3>
-                </div>
-                <div class="card-body p-2 p-md-3">
-                    <div class="table-responsive">
-                    <table id="reportTable" class="table table-bordered table-striped text-center mb-0" style="min-width: 650px;">
-                        <thead>
-                            <tr class="bg-light">
-                                <th><?php echo $lang['check_in_header']; ?></th>
-                                <th><?php echo $lang['room_number_header']; ?></th>
-                                <th><?php echo $lang['customer_name_header']; ?></th>
-                                <th><?php echo $lang['nights_header']; ?></th>
-                                <th><?php echo $lang['guests']; ?></th>
-                                <th><?php echo $lang['room_price'] ?? 'ຄ່າຫ້ອງ'; ?></th>
-                                <th><?php echo $lang['food_charge'] ?? 'ຄ່າອາຫານ'; ?></th>
-                                <th class="text-success font-weight-bold"><?php echo $lang['total_header']; ?></th>
-                                <th><?php echo $lang['status_header']; ?></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach($recent_bookings as $row): ?>
-                                <?php 
-                                    $subtotal = $row['total_price'] + $row['food_charge'];
-                                    $row_tax = round($subtotal * ($tax_percent / 100));
-                                    $row_total = $subtotal + $row_tax;
-                                ?>
-                                <tr>
-                                    <td><?php echo date('d/m/Y', strtotime($row['check_in_date'])); ?></td>
-                                    <td><strong><?php echo htmlspecialchars($row['room_number']); ?></strong></td>
-                                    <td class="text-left"><?php echo htmlspecialchars($row['customer_name']); ?></td>
-                                    <td>
-                                        <?php 
-                                            $diff = date_diff(date_create($row['check_in_date']), date_create($row['check_out_date']));
-                                            echo $diff->format("%a"); 
-                                        ?>
-                                    </td>
-                                    <td><?php echo $row['guest_count']; ?> <?php echo $lang['person_unit']; ?></td>
-                                    <td class="text-right"><?php echo number_format($row['total_price']); ?></td>
-                                    <td class="text-right text-info"><?php echo number_format($row['food_charge']); ?></td>
-                                    <td class="text-right text-success font-weight-bold"><?php echo number_format($row_total); ?></td>
-                                    <td>
-                                        <?php if($row['status'] == 'Completed'): ?>
-                                            <span class="badge badge-success"><i class="fas fa-check"></i> <?php echo $lang['paid'] ?? 'ຊຳລະແລ້ວ'; ?></span>
-                                        <?php elseif($row['status'] == 'Booked'): ?>
-                                            <span class="badge badge-primary"><i class="fas fa-calendar-check"></i> <?php echo $lang['booked']; ?></span>
-                                        <?php else: ?>
-                                            <span class="badge badge-warning text-white"><i class="fas fa-clock"></i> <?php echo $lang['occupied']; ?></span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- Recent POS Transactions Table -->
-    <?php if($type == 'all' || $type == 'pos_history'): ?>
-    <div class="row mt-4 mb-4" id="posHistory">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <h3 class="card-title"><i class="fas fa-shopping-cart text-success"></i> <?php echo $lang['pos_history_title']; ?></h3>
-                </div>
-                <div class="card-body p-2 p-md-3">
-                    <div class="table-responsive">
-                    <table id="posTable" class="table table-bordered table-striped text-center mb-0" style="min-width: 500px;">
-                        <thead>
-                            <tr class="bg-light">
-                                <th><?php echo $lang['date_time']; ?></th>
-                                <th class="text-left"><?php echo $lang['product_name_header'] ?? 'ຊື່ສິນຄ້າ'; ?></th>
-                                <th><?php echo $lang['category']; ?></th>
-                                <th><?php echo $lang['qty_label']; ?></th>
-                                <th class="text-success font-weight-bold"><?php echo $lang['total_header']; ?></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach($recent_pos as $row): ?>
-                                <tr>
-                                    <td><?php echo date('d/m/Y H:i', strtotime($row['created_at'])); ?></td>
-                                    <td class="text-left font-weight-bold"><?php echo htmlspecialchars($row['prod_name']); ?></td>
-                                    <td><span class="badge badge-secondary"><?php echo htmlspecialchars($row['category']); ?></span></td>
-                                    <td><?php echo $row['o_qty']; ?></td>
-                                    <td class="text-right text-success font-weight-bold"><?php echo number_format($row['amount']); ?> <?php echo $currency_symbol ?? 'ກີບ'; ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-
 </div>
 
 <!-- jQuery -->
@@ -624,26 +411,12 @@ while($row = $stmtRT->fetch()) {
 <script src="plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
 <!-- ChartJS -->
 <script src="plugins/chart.js/Chart.min.js"></script>
+<!-- SweetAlert2 -->
+<script src="sweetalert/dist/sweetalert2.all.min.js"></script>
 
 <script>
 $(document).ready(function() {
-    var dtConfig = {
-        "order": [[0, "desc"]],
-        "language": {
-            "sSearch": "<?php echo $lang['dt_search'] ?? $lang['search']; ?>:",
-            "sLengthMenu": "<?php echo $lang['dt_length']; ?>",
-            "sInfo": "<?php echo $lang['dt_info']; ?>",
-            "sInfoEmpty": "<?php echo $lang['dt_info_empty'] ?? $lang['table_info_empty']; ?>",
-            "sZeroRecords": "<?php echo $lang['dt_zeroRecords']; ?>",
-            "oPaginate": {
-                "sNext": "<?php echo $lang['dt_paginate_next'] ?? $lang['next']; ?>",
-                "sPrevious": "<?php echo $lang['dt_paginate_previous'] ?? $lang['previous']; ?>"
-            }
-        }
-    };
-    $('#reportTable').DataTable(dtConfig);
-    $('#posTable').DataTable(dtConfig);
-    $('#unavailableTable').DataTable(dtConfig);
+
 
     // Chart.js Configuration
     Chart.defaults.global.defaultFontFamily = "'Noto Sans Lao Looped', sans-serif";
@@ -799,50 +572,26 @@ $(document).ready(function() {
     });
     <?php endif; ?>
 
-    <?php if($type == 'all' || $type == 'finance'): ?>
-    // Occupancy Rate Chart
-    var occupancyCanvas = $('#occupancyChart').get(0).getContext('2d');
-    var occupancyData = {
-      labels  : <?php echo json_encode($months); ?>,
-      datasets: [
-        {
-          label: '<?php echo $lang['room_occupancy_label']; ?> (%)',
-          data: <?php echo json_encode($occupancy_chart); ?>,
-          borderColor: '#17a2b8',
-          backgroundColor: 'rgba(23, 162, 184, 0.1)',
-          fill: true,
-          lineTension: 0.3,
-          pointRadius: 5,
-          pointBackgroundColor: '#17a2b8'
-        }
-      ]
-    };
-    new Chart(occupancyCanvas, {
-      type: 'line',
-      data: occupancyData,
-      options: {
-        animation: { duration: 2000, easing: 'easeOutQuart' },
-        maintainAspectRatio: false,
-        responsive: true,
-        scales: {
-          yAxes: [{
-            ticks: { 
-              beginAtZero: true,
-              max: 100,
-              callback: function(v) { return v + '%'; } 
-            }
-          }]
-        },
-        tooltips: {
-          callbacks: {
-            label: function(tooltipItem, data) {
-              return data.datasets[0].label + ': ' + tooltipItem.yLabel + '%';
-            }
-          }
-        }
-      }
+
+
+    // SweetAlert Session notifications
+    <?php if(isset($_SESSION['success'])): ?>
+    Swal.fire({
+        icon: 'success',
+        title: '<?php echo $lang['success_label'] ?? 'ສຳເລັດ'; ?>',
+        text: '<?php echo $_SESSION['success']; ?>',
+        confirmButtonText: '<?php echo $lang['ok'] ?? 'ຕົກລົງ'; ?>'
     });
-    <?php endif; ?>
+    <?php unset($_SESSION['success']); endif; ?>
+
+    <?php if(isset($_SESSION['error'])): ?>
+    Swal.fire({
+        icon: 'error',
+        title: '<?php echo $lang['error_label'] ?? 'ຜິດພາດ'; ?>',
+        text: '<?php echo $_SESSION['error']; ?>',
+        confirmButtonText: '<?php echo $lang['ok'] ?? 'ຕົກລົງ'; ?>'
+    });
+    <?php unset($_SESSION['error']); endif; ?>
 
 });
 </script>

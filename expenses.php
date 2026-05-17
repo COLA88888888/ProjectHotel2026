@@ -319,9 +319,15 @@ $(document).ready(function() {
     $('#expenseTable').DataTable({
         "order": [[ 0, "asc" ]],
         "language": {
-            "sLengthMenu": "<?php echo $lang['dt_length']; ?>",
-            "sSearch": "<?php echo $lang['dt_search']; ?>",
-            "oPaginate": { "sPrevious": "<?php echo $lang['dt_paginate_previous']; ?>", "sNext": "<?php echo $lang['dt_paginate_next']; ?>" }
+            "search": "<?php echo $lang['dt_search'] ?? $lang['search']; ?>:",
+            "lengthMenu": "<?php echo $lang['dt_length']; ?>",
+            "info": "<?php echo $lang['dt_info']; ?>",
+            "infoEmpty": "<?php echo $lang['dt_info_empty'] ?? $lang['table_info_empty']; ?>",
+            "zeroRecords": "<?php echo $lang['dt_zeroRecords']; ?>",
+            "paginate": {
+                "next": "<?php echo $lang['dt_paginate_next'] ?? $lang['next']; ?>",
+                "previous": "<?php echo $lang['dt_paginate_previous'] ?? $lang['previous']; ?>"
+            }
         }
     });
 

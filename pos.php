@@ -50,8 +50,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && (isset($_POST['checkout_pos']) || is
                 $item_tax = round($subtotal * ($tax_p / 100));
                 $total_with_tax = $subtotal + $item_tax;
                 
-                $stmt = $pdo->prepare("INSERT INTO orders (bill_id, prod_id, o_qty, amount, received, change_amount, payment_method, o_date) VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE())");
-                $stmt->execute([$bill_id, $pid, $q, $total_with_tax, $received, $change_amount, $payment_method]);
+                $user_id = $_SESSION['user_id'] ?? null;
+                $stmt = $pdo->prepare("INSERT INTO orders (bill_id, prod_id, o_qty, amount, received, change_amount, payment_method, o_date, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE(), ?)");
+                $stmt->execute([$bill_id, $pid, $q, $total_with_tax, $received, $change_amount, $payment_method, $user_id]);
                 
                 $upd = $pdo->prepare("UPDATE products SET qty = qty - ? WHERE prod_id = ?");
                 $upd->execute([$q, $pid]);
@@ -415,7 +416,7 @@ foreach ($products as $p) {
                     <form action="" method="post" id="posForm">
                         <div id="hiddenInputs"></div>
                         <button type="submit" name="checkout_pos" class="btn btn-success btn-lg btn-block" id="btnCheckout" disabled style="border-radius: 4px; font-size: 1rem;">
-                            <i class="fas fa-money-bill-wave"></i> <?php echo $lang['checkout']; ?>
+                            <i class="fas fa-money-bill-wave"></i> <?php echo $lang['pay'] ?? 'ຊຳລະເງິນ'; ?>
                         </button>
                     </form>
                 </div>
@@ -633,10 +634,10 @@ function renderCart() {
                 <p class="mb-0"><?php echo $lang['click_to_add']; ?></p>
             </div>
         `);
-        $('#btnCheckout').prop('disabled', true).html('<i class="fas fa-money-bill-wave"></i> <?php echo $lang['checkout']; ?>');
+        $('#btnCheckout').prop('disabled', true).html('<i class="fas fa-money-bill-wave"></i> <?php echo $lang['pay'] ?? 'ຊຳລະເງິນ'; ?>');
     } else {
         $('#cartItems').html(html);
-        $('#btnCheckout').prop('disabled', false).html('<i class="fas fa-money-bill-wave"></i> <?php echo $lang['checkout']; ?> (' + itemCount + ' <?php echo $lang['item_label'] ?? 'ລາຍການ'; ?>)');
+        $('#btnCheckout').prop('disabled', false).html('<i class="fas fa-money-bill-wave"></i> <?php echo $lang['pay'] ?? 'ຊຳລະເງິນ'; ?> (' + itemCount + ' <?php echo $lang['item_label'] ?? 'ລາຍການ'; ?>)');
     }
 
     let taxAmount = Math.round(total * (taxPercent / 100));
@@ -655,7 +656,7 @@ $('#posForm').on('submit', function(e) {
     var totalVal = parseFloat(totalStr.replace(/,/g, '')) || 0;
     
     Swal.fire({
-        title: '<?php echo $lang['checkout']; ?>',
+        title: '<?php echo $lang['pay'] ?? 'ຊຳລະເງິນ'; ?>',
         html: `
             <div class="text-left mb-3">
                 <div class="d-flex justify-content-between mb-3 border-bottom pb-2">

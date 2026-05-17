@@ -363,6 +363,19 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
               <p><?php echo $lang['financial_report']; ?></p>
             </a>
           </li>
+
+          <li class="nav-item">
+            <a href="report_pos_history.php" target="frame" class="nav-link">
+              <i class="nav-icon fas fa-shopping-cart"></i>
+              <p><?php echo $lang['pos_history'] ?? 'ປະຫວັດການຂາຍ POS'; ?></p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="report_checkin_checkout.php" target="frame" class="nav-link">
+              <i class="nav-icon fas fa-exchange-alt"></i>
+              <p><?php echo $lang['checkin_checkout_report']; ?></p>
+            </a>
+          </li>
           <li class="nav-item">
             <a href="expenses.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-file-invoice-dollar"></i>
@@ -566,7 +579,13 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
         $navLinks.removeClass('active');
         $('.nav-sidebar .nav-item > .nav-link').removeClass('active');
         $navLinks.each(function() {
-          if (iframeSrc.indexOf($(this).attr('href')) !== -1) {
+          var href = $(this).attr('href');
+          var hrefBase = href ? href.split('?')[0] : '';
+          
+          var url = new URL(iframeSrc);
+          var iframeBase = url.pathname.split('/').pop();
+          
+          if (hrefBase && iframeBase === hrefBase) {
             $(this).addClass('active');
             var $parentLi = $(this).closest('.nav-treeview').closest('.nav-item');
             if ($parentLi.length) {

@@ -205,8 +205,6 @@ try {
                <span><?php echo $lang['no_notifications']; ?></span>
              </a>
           </div>
-          <div class="dropdown-divider"></div>
-          <a href="logs.php" target="frame" class="dropdown-item dropdown-footer"><?php echo $lang['view_all_logs']; ?></a>
         </div>
       </li>
 
@@ -369,6 +367,19 @@ try {
             <a href="report.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-chart-bar"></i>
               <p><?php echo $lang['financial_report']; ?></p>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="report_pos_history.php" target="frame" class="nav-link">
+              <i class="nav-icon fas fa-shopping-cart"></i>
+              <p><?php echo $lang['pos_history'] ?? 'ປະຫວັດການຂາຍ POS'; ?></p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="report_checkin_checkout.php" target="frame" class="nav-link">
+              <i class="nav-icon fas fa-exchange-alt"></i>
+              <p><?php echo $lang['checkin_checkout_report']; ?></p>
             </a>
           </li>
           <li class="nav-item">
@@ -559,7 +570,12 @@ try {
         
         $navLinks.each(function() {
           var href = $(this).attr('href');
-          if (iframeSrc.indexOf(href) !== -1) {
+          var hrefBase = href.split('?')[0]; // get base filename
+          
+          var url = new URL(iframeSrc);
+          var iframeBase = url.pathname.split('/').pop(); // get iframe filename
+          
+          if (iframeBase === hrefBase) {
             $(this).addClass('active');
             var $parentLi = $(this).closest('.nav-treeview').closest('.nav-item');
             if ($parentLi.length) {
