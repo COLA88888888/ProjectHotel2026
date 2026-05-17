@@ -28,13 +28,13 @@ if (!$room_type) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update'])) {
-    $room_type_name_la = $_POST['room_type_name_la'];
-    $room_type_name_en = $_POST['room_type_name_en'];
-    $room_type_name_cn = $_POST['room_type_name_cn'];
-    $room_type_code = $_POST['room_type_code'];
-    $description_la = $_POST['description_la'];
-    $description_en = $_POST['description_en'];
-    $description_cn = $_POST['description_cn'];
+    $room_type_name_la = $_POST['room_type_name_la'] ?? '';
+    $room_type_name_en = $_POST['room_type_name_en'] ?? '';
+    $room_type_name_cn = $_POST['room_type_name_cn'] ?? '';
+    $room_type_code = $_POST['room_type_code'] ?? '';
+    $description_la = $_POST['description_la'] ?? '';
+    $description_en = $_POST['description_en'] ?? '';
+    $description_cn = $_POST['description_cn'] ?? '';
 
     // Also update original columns for backward compatibility
     $room_type_name = $room_type_name_la;
@@ -91,26 +91,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update'])) {
                             <label><?php echo $lang['room_type_label']; ?> (Lao) <span class="text-danger">*</span></label>
                             <input type="text" name="room_type_name_la" id="room_type_name_la" class="form-control" value="<?php echo htmlspecialchars($room_type['room_type_name_la'] ?: $room_type['room_type_name']); ?>" required>
                         </div>
-                        <div class="form-group">
-                            <label><?php echo $lang['room_type_label']; ?> (English)</label>
-                            <input type="text" name="room_type_name_en" class="form-control" value="<?php echo htmlspecialchars($room_type['room_type_name_en'] ?? ''); ?>">
-                        </div>
-                        <div class="form-group">
-                            <label><?php echo $lang['room_type_label']; ?> (Chinese)</label>
-                            <input type="text" name="room_type_name_cn" class="form-control" value="<?php echo htmlspecialchars($room_type['room_type_name_cn'] ?? ''); ?>">
-                        </div>
+
                         <div class="form-group">
                             <label><?php echo $lang['details']; ?> (Lao)</label>
                             <textarea name="description_la" id="description_la" class="form-control" rows="2"><?php echo htmlspecialchars($room_type['description_la'] ?: $room_type['description']); ?></textarea>
                         </div>
-                        <div class="form-group">
-                            <label><?php echo $lang['details']; ?> (English)</label>
-                            <textarea name="description_en" class="form-control" rows="2"><?php echo htmlspecialchars($room_type['description_en'] ?? ''); ?></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label><?php echo $lang['details']; ?> (Chinese)</label>
-                            <textarea name="description_cn" class="form-control" rows="2"><?php echo htmlspecialchars($room_type['description_cn'] ?? ''); ?></textarea>
-                        </div>
+
                     </div>
                     <div class="card-footer bg-white text-center">
                         <button type="submit" name="update" class="btn btn-warning px-5"><i class="fas fa-save mr-1"></i> <?php echo $lang['save']; ?></button>

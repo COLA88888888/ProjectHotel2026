@@ -13,16 +13,16 @@ if (file_exists($lang_file)) {
 
 // Handle Add Unit
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_unit'])) {
-    $unit_name_la = trim($_POST['unit_name_la']);
-    $unit_name_en = trim($_POST['unit_name_en']);
-    $unit_name_cn = trim($_POST['unit_name_cn']);
+    $unit_name_la = trim($_POST['unit_name_la'] ?? '');
+    $unit_name_en = trim($_POST['unit_name_en'] ?? '');
+    $unit_name_cn = trim($_POST['unit_name_cn'] ?? '');
     
     if (!empty($unit_name_la)) {
         $stmt = $pdo->prepare("INSERT INTO product_units (unit_name, unit_name_la, unit_name_en, unit_name_cn) VALUES (?, ?, ?, ?)");
         if ($stmt->execute([$unit_name_la, $unit_name_la, $unit_name_en, $unit_name_cn])) {
-            $_SESSION['success'] = "ເພີ່ມຫົວໜ່ວຍສິນຄ້າສຳເລັດແລ້ວ!";
+            $_SESSION['success'] = $lang['success_label'] ?? "ເພີ່ມຫົວໜ່ວຍສິນຄ້າສຳເລັດແລ້ວ!";
         } else {
-            $_SESSION['error'] = "ເກີດຂໍ້ຜິດພາດ ຫຼື ຂໍ້ມູນຊ້ຳກັນ!";
+            $_SESSION['error'] = $lang['error_label'] ?? "ເກີດຂໍ້ຜິດພາດ ຫຼື ຂໍ້ມູນຊ້ຳກັນ!";
         }
     }
     header("Location: form_product_units.php");
@@ -32,9 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_unit'])) {
 // Handle Edit Unit
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_unit'])) {
     $id = (int)$_POST['id'];
-    $name_la = trim($_POST['unit_name_la']);
-    $name_en = trim($_POST['unit_name_en']);
-    $name_cn = trim($_POST['unit_name_cn']);
+    $name_la = trim($_POST['unit_name_la'] ?? '');
+    $name_en = trim($_POST['unit_name_en'] ?? '');
+    $name_cn = trim($_POST['unit_name_cn'] ?? '');
     $old_name = trim($_POST['old_name']);
     
     if (!empty($name_la)) {
@@ -44,9 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_unit'])) {
             $updateProducts = $pdo->prepare("UPDATE products SET unit = ? WHERE unit = ?");
             $updateProducts->execute([$name_la, $old_name]);
             
-            $_SESSION['success'] = "ແກ້ໄຂຫົວໜ່ວຍສິນຄ້າສຳເລັດແລ້ວ!";
+            $_SESSION['success'] = $lang['success_label'] ?? "ແກ້ໄຂຫົວໜ່ວຍສິນຄ້າສຳເລັດແລ້ວ!";
         } else {
-            $_SESSION['error'] = "ເກີດຂໍ້ຜິດພາດ!";
+            $_SESSION['error'] = $lang['error_label'] ?? "ເກີດຂໍ້ຜິດພາດ!";
         }
     }
     header("Location: form_product_units.php");
@@ -58,7 +58,7 @@ if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
     $stmt = $pdo->prepare("DELETE FROM product_units WHERE id = ?");
     if ($stmt->execute([$id])) {
-        $_SESSION['success'] = "ລຶບຫົວໜ່ວຍສຳເລັດແລ້ວ!";
+        $_SESSION['success'] = $lang['success_label'] ?? "ລຶບຫົວໜ່ວຍສຳເລັດແລ້ວ!";
     }
     header("Location: form_product_units.php");
     exit();
@@ -123,14 +123,7 @@ $unit_name_col = "unit_name_" . $current_lang;
                             <label><?php echo $lang['unit_name_la']; ?></label>
                             <input type="text" name="unit_name_la" class="form-control" placeholder="Lao..." required>
                         </div>
-                        <div class="form-group">
-                            <label><?php echo $lang['unit_name_en']; ?></label>
-                            <input type="text" name="unit_name_en" class="form-control" placeholder="English...">
-                        </div>
-                        <div class="form-group">
-                            <label><?php echo $lang['unit_name_cn']; ?></label>
-                            <input type="text" name="unit_name_cn" class="form-control" placeholder="Chinese...">
-                        </div>
+
                     </div>
                     <div class="card-footer bg-white border-0">
                         <button type="submit" name="add_unit" class="btn btn-info btn-block"><i class="fas fa-save"></i> <?php echo $lang['save']; ?></button>
@@ -203,14 +196,7 @@ $unit_name_col = "unit_name_" . $current_lang;
                   <label><?php echo $lang['unit_name_la']; ?></label>
                   <input type="text" name="unit_name_la" id="edit_name_la" class="form-control" required>
               </div>
-              <div class="form-group">
-                  <label><?php echo $lang['unit_name_en']; ?></label>
-                  <input type="text" name="unit_name_en" id="edit_name_en" class="form-control">
-              </div>
-              <div class="form-group">
-                  <label><?php echo $lang['unit_name_cn']; ?></label>
-                  <input type="text" name="unit_name_cn" id="edit_name_cn" class="form-control">
-              </div>
+
           </div>
           <div class="modal-footer border-0">
             <button type="button" class="btn btn-light" data-dismiss="modal"><?php echo $lang['cancel']; ?></button>

@@ -942,16 +942,16 @@ $(document).ready(function() {
     // Initialize DataTable
     var table = $('#resTable').DataTable({
         "language": {
-            "sLengthMenu":   "<?php echo $lang['dt_length'] ?? 'แสดง _MENU_ รายการ'; ?>",
-            "sZeroRecords":  "<?php echo $lang['dt_zeroRecords'] ?? 'ไม่พบข้อมูล'; ?>",
-            "sInfo":         "<?php echo $lang['dt_info'] ?? 'แสดง _START_ ถึง _END_ จากทั้งหมด _TOTAL_ รายการ'; ?>",
-            "sSearch":       "<?php echo $lang['dt_search'] ?? 'ค้นหา:'; ?>",
+            "sLengthMenu":   "<?php echo $lang['dt_length'] ?? 'ສະແດງ _MENU_ ລາຍການ'; ?>",
+            "sZeroRecords":  "<?php echo $lang['dt_zeroRecords'] ?? 'ບໍ່ມີຂໍ້ມູນ'; ?>",
+            "sInfo":         "<?php echo $lang['dt_info'] ?? 'ສະແດງ _START_ ຫາ _END_ ຈາກທັງໝົດ _TOTAL_ ລາຍການ'; ?>",
+            "sSearch":       "<?php echo $lang['dt_search'] ?? 'ຄົ້ນຫາ:'; ?>",
             "oPaginate": { 
-                "sPrevious": "<?php echo $lang['dt_paginate_previous'] ?? 'ก่อนหน้า'; ?>", 
-                "sNext": "<?php echo $lang['dt_paginate_next'] ?? 'ถัดไป'; ?>" 
+                "sPrevious": "<?php echo $lang['dt_paginate_previous'] ?? 'ກ່ອນໜ້າ'; ?>", 
+                "sNext": "<?php echo $lang['dt_paginate_next'] ?? 'ຖັດໄປ'; ?>" 
             }
         },
-        "responsive": true,
+        "responsive": false,
         "autoWidth": false,
         "order": [[ 3, "asc" ]] // Sort by check-in date by default
     });

@@ -81,6 +81,10 @@ $date = date('d/m/Y H:i', strtotime($items[0]['created_at']));
         .footer { text-align: center; margin-top: 10px; font-size: 10px; font-style: italic; line-height: 1.2; color: #444; }
         
         @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
             body { background: none; padding: 0; margin: 0; }
             .receipt { max-width: 100%; width: 100%; padding: 3mm; margin: 0; box-shadow: none; }
             .no-print { display: none; }

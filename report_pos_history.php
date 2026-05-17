@@ -53,7 +53,7 @@ $recent_pos = $stmtRecentPos->fetchAll();
         body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 20px; }
         
         .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #eef2f7; }
-        .section-header h2 { margin: 0; font-weight: 800; color: #2c3e50; font-size: 1.7rem; }
+        .section-header h2 { margin: 0; font-weight: 800; color: #2c3e50; font-size: 1.5rem; }
         
         .card { border-radius: 16px !important; border: none !important; box-shadow: 0 10px 30px rgba(0,0,0,0.05) !important; }
         
@@ -92,6 +92,19 @@ $recent_pos = $stmtRecentPos->fetchAll();
         
         /* Clean Plain Text Styles */
         .plain-bold { font-weight: 700; color: #2c3e50; }
+        
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .section-header { flex-direction: column; align-items: flex-start; gap: 15px; margin-bottom: 15px; padding-bottom: 10px; }
+            .section-header h2 { font-size: 1.3rem; margin-bottom: 0; }
+            .card-title { font-size: 1.05rem !important; }
+            .card-body { padding: 10px !important; }
+        }
+        @media (max-width: 480px) {
+            .section-header h2 { font-size: 1.15rem; }
+            .card-title { font-size: 0.95rem !important; }
+            .btn-gradient-success { padding: 6px 15px; font-size: 0.9rem; }
+        }
     </style>
 </head>
 <body>

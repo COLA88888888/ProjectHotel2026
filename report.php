@@ -233,12 +233,13 @@ while($row = $stmtRT->fetch()) {
 
         @media (max-width: 768px) {
             body { padding: 10px; }
-            .stat-cards-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .stat-card-value { font-size: 1.15rem; }
-            .stat-card { min-height: 80px; padding: 10px; }
-            .stat-card-label { font-size: 0.65rem; }
+            .stat-cards-row { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .stat-card-value { font-size: 1.25rem; }
+            .stat-card { min-height: 90px; padding: 12px; }
+            .stat-card-label { font-size: 0.75rem; letter-spacing: 0.3px; }
+            .stat-card-icon { font-size: 1.8rem; top: 12px; right: 12px; }
             .section-header { flex-direction: column; align-items: flex-start; gap: 15px; }
-            .section-header h2 { font-size: 1.2rem; margin-bottom: 0; }
+            .section-header h2 { font-size: 1.3rem; margin-bottom: 0; }
             .section-header form { width: 100%; display: flex; flex-direction: column; gap: 0; }
             .filter-wrapper { 
                 flex-direction: column; 
@@ -260,11 +261,11 @@ while($row = $stmtRT->fetch()) {
             .col-12, .col-lg-8, .col-lg-4 { padding-left: 5px; padding-right: 5px; width: 100% !important; }
         }
         @media (max-width: 480px) {
-            .stat-cards-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-            .stat-card-value { font-size: 1rem; }
-            .stat-card-label { font-size: 0.6rem; }
-            .stat-card { min-height: 75px; padding: 10px 8px; }
-            .stat-card-icon { font-size: 1.4rem; top: 8px; right: 8px; }
+            .stat-cards-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .stat-card-value { font-size: 1.15rem; word-break: break-word; }
+            .stat-card-label { font-size: 0.7rem; }
+            .stat-card { min-height: 80px; padding: 12px 10px; }
+            .stat-card-icon { font-size: 1.5rem; top: 10px; right: 10px; }
         }
     </style>
 </head>
@@ -341,11 +342,11 @@ while($row = $stmtRT->fetch()) {
             <div class="stat-card-icon"><i class="fas fa-chart-line"></i></div>
         </div>
 
-        <!-- Period Customers -->
+        <!-- Total Guests -->
         <div class="stat-card gc-dark">
             <div class="stat-card-top">
-                <div class="stat-card-label"><?php echo $lang['total_bills_label']; ?></div>
-                <div class="stat-card-value"><?php echo $period_customers; ?> <sup style="font-size: 1rem"><?php echo $lang['bill_unit']; ?></sup></div>
+                <div class="stat-card-label"><?php echo $lang['total_customers'] ?? 'ຈຳນວນລູກຄ້າ'; ?></div>
+                <div class="stat-card-value"><?php echo $total_guests; ?> <sup style="font-size: 0.55em; top: -0.4em; opacity: 0.8;"><?php echo $lang['people_unit'] ?? 'ຄົນ'; ?></sup></div>
             </div>
             <div class="stat-card-icon"><i class="fas fa-users"></i></div>
         </div>

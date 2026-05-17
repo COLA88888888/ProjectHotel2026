@@ -291,7 +291,7 @@ $logs = $stmt->fetchAll();
             "ordering": false,
             "info": true,
             "autoWidth": false,
-            "responsive": true,
+            "responsive": false,
             "pageLength": 10,
             "language": {
                 "search": "<?php echo $lang['dt_search'] ?? $lang['search']; ?>:",

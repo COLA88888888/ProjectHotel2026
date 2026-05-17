@@ -271,7 +271,7 @@ try {
     <div class="sidebar">
       <!-- Sidebar Menu -->
       <nav class="mt-2 pb-5">
-        <ul class="nav nav-pills nav-sidebar flex-column nav-flat nav-child-indent" data-widget="treeview" role="menu" data-accordion="true">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="true">
         
           <li class="nav-header text-uppercase" style="color: rgba(255,255,255,0.6); font-size: 0.75rem; letter-spacing: 1px;"><?php echo $lang['home']; ?></li>
           <li class="nav-item">
@@ -564,26 +564,27 @@ try {
     // Listen for iframe load to sync active menu
     $('iframe[name="frame"]').on('load', function() {
       try {
-        var iframeSrc = this.contentWindow.location.href;
-        $navLinks.removeClass('active');
-        $('.nav-sidebar .nav-item > .nav-link').removeClass('active');
-        
-        $navLinks.each(function() {
-          var href = $(this).attr('href');
-          var hrefBase = href.split('?')[0]; // get base filename
+        var iframePath = this.contentWindow.location.pathname;
+        var iframeSearch = this.contentWindow.location.search;
+        // Get the relative path after the project folder, or just use the full pathname to check
+        if (iframePath !== 'about:blank' && iframePath !== '' && iframePath !== '/') {
+          $navLinks.removeClass('active');
+          $('.nav-sidebar .nav-item > .nav-link').removeClass('active');
           
-          var url = new URL(iframeSrc);
-          var iframeBase = url.pathname.split('/').pop(); // get iframe filename
-          
-          if (iframeBase === hrefBase) {
-            $(this).addClass('active');
-            var $parentLi = $(this).closest('.nav-treeview').closest('.nav-item');
-            if ($parentLi.length) {
-              $parentLi.addClass('menu-open menu-is-opening');
-              $parentLi.children('.nav-link').addClass('active');
+          var matched = false;
+          $navLinks.each(function() {
+            var href = $(this).attr('href');
+            if (href && href !== '#' && iframePath.indexOf(href.split('?')[0]) !== -1) {
+              $(this).addClass('active');
+              var $parentLi = $(this).closest('.nav-treeview').closest('.nav-item');
+              if ($parentLi.length) {
+                $parentLi.children('.nav-link').addClass('active');
+                $parentLi.addClass('menu-open');
+              }
+              matched = true;
             }
-          }
-        });
+          });
+        }
       } catch(e) { /* cross-origin */ }
     });
 

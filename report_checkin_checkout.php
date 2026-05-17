@@ -152,7 +152,7 @@ foreach ($all_bookings as $b) {
         body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 20px; }
         
         .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #eef2f7; }
-        .section-header h2 { margin: 0; font-weight: 800; color: #2c3e50; font-size: 1.7rem; }
+        .section-header h2 { margin: 0; font-weight: 800; color: #2c3e50; font-size: 1.5rem; }
         
         .card { border-radius: 16px !important; border: none !important; box-shadow: 0 10px 30px rgba(0,0,0,0.05) !important; }
         
@@ -185,8 +185,9 @@ foreach ($all_bookings as $b) {
 
         @media (max-width: 768px) {
             body { padding: 10px; }
-            .section-header { flex-direction: column; align-items: flex-start; gap: 15px; }
-            .section-header h2 { font-size: 1.2rem; }
+            .section-header { flex-direction: column; align-items: flex-start; gap: 15px; margin-bottom: 15px; padding-bottom: 10px; }
+            .section-header h2 { font-size: 1.3rem; margin-bottom: 0; }
+            .card-title { font-size: 1.05rem !important; }
             .filter-wrapper { 
                 flex-direction: column; 
                 width: 100%; 
@@ -199,12 +200,22 @@ foreach ($all_bookings as $b) {
             .filter-wrapper .input-group { width: 100% !important; margin: 0 !important; }
             .filter-wrapper button { width: 100% !important; border-radius: 8px !important; font-weight: 700; }
         }
+        
+        @media (max-width: 480px) {
+            .section-header h2 { font-size: 1.15rem; }
+            .card-title { font-size: 0.95rem !important; }
+        }
 
         @media print {
             body { background: #fff; padding: 0; }
             .card { box-shadow: none !important; }
             .card-header-custom { background: #333 !important; color: #fff !important; border-radius: 0 !important; }
             .table-responsive { overflow: visible !important; }
+        }
+        
+        /* Fix vertical scrollbar bug in Windows when horizontal scrollbar appears */
+        .table-responsive {
+            overflow-y: hidden !important;
         }
 
         /* Compact Table Styles to prevent scrollbars */
@@ -281,107 +292,109 @@ foreach ($all_bookings as $b) {
     <!-- Table -->
     <div class="card card-outline card-warning shadow-sm">
         <div class="card-body p-2 p-md-3">
-            <table id="checkinCheckoutTable" class="table table-bordered table-striped text-center mb-0 table-compact" style="width: 100%;">
-                <thead class="bg-warning text-white" style="white-space: nowrap;">
-                    <tr>
-                        <th><?php echo $lang['room'] ?? 'ຫ້ອງ'; ?></th>
-                        <th><?php echo $lang['customer'] ?? 'ລູກຄ້າ'; ?> / <?php echo $lang['guests'] ?? 'ຈຳນວນຄົນ'; ?></th>
-                        <th><?php echo $lang['phone'] ?? 'ເບີໂທ'; ?></th>
-                        <th><?php echo $lang['checkin_date'] ?? 'ວັນທີເຂົ້າ'; ?></th>
-                        <th><?php echo $lang['checkout_date'] ?? 'ວັນທີອອກ'; ?></th>
-                        <th><?php echo $lang['nights'] ?? 'ຈຳນວນຄືນ'; ?></th>
-                        <th><?php echo $lang['additional_services'] ?? 'ຄ່າອາຫານ'; ?></th>
-                        <th><?php echo $lang['total'] ?? 'ລວມ'; ?></th>
-                        <th><?php echo $lang['payment_amount'] ?? 'ຍອດຊຳລະ'; ?></th>
-                        <th class="no-print"><?php echo $lang['print'] ?? 'ພິມ'; ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php 
-                    if (count($payments_history) > 0):
-                        foreach($payments_history as $row): 
-                            $subtotal = $row['total_price'] + $row['food_charge'];
-                            $row_tax = round($subtotal * ($tax_percent / 100));
-                            $total_due = $subtotal + $row_tax;
-
-                            $paid_amount = 0;
-                            if ($row['status'] == 'Completed') {
-                                $paid_amount = $total_due;
-                            } else {
-                                $paid_amount = $row['deposit_amount'];
-                            }
-                            
-                            $diff = date_diff(date_create($row['check_in_date']), date_create($row['check_out_date']));
-                            $nights = $diff->format("%a");
-                            if ($nights < 1) $nights = 1;
-                            
-                            $paid_status_badge = '';
-                            $remaining = $total_due - $paid_amount;
-                            $display_amount = 0;
-                            
-                            if ($paid_amount >= $total_due) {
-                                $paid_status_badge = '<br><span class="badge badge-success mt-1" style="font-size: 0.75rem;">' . ($lang['paid'] ?? 'ຈ່າຍແລ້ວ') . '</span>';
-                                $display_amount = $paid_amount; // Show total paid for completed bookings
-                            } elseif ($paid_amount > 0) {
-                                $paid_status_badge = '<br><span class="badge badge-warning mt-1" style="font-size: 0.75rem;">' . ($lang['room_fee_paid'] ?? 'ຈ່າຍຄ່າຫ້ອງ') . ': ' . number_format($paid_amount) . '</span>';
-                                $paid_status_badge .= '<br><span class="badge badge-danger mt-1" style="font-size: 0.75rem;">ຄ້າງຊຳລະ: ' . number_format($remaining) . '</span>';
-                                $display_amount = $remaining; // Show remaining balance for occupied bookings
-                            } else {
-                                $paid_status_badge = '<br><span class="badge badge-danger mt-1" style="font-size: 0.75rem;">' . ($lang['unpaid'] ?? 'ຍັງບໍ່ຈ່າຍ') . ': ' . number_format($remaining) . '</span>';
-                                $display_amount = $remaining; // Show total due
-                            }
-                        ?>
-                            <tr>
-                                <td>
-                                    <strong><?php echo htmlspecialchars($row['room_number']); ?></strong><br>
-                                    <small class="text-muted"><?php echo htmlspecialchars($row['room_type_localized'] ?: $row['room_type_base']); ?></small>
-                                </td>
-                                <td class="text-left">
-                                    <div class="font-weight-bold text-dark"><?php echo htmlspecialchars($row['customer_name']); ?></div>
-                                    <div class="small text-muted"><i class="fas fa-users mr-1"></i> ຈຳນວນຄົນ: <strong><?php echo $row['guest_count']; ?></strong> ຄົນ</div>
-                                </td>
-                                <td><?php echo htmlspecialchars($row['customer_phone']); ?></td>
-                                <td class="text-success font-weight-bold"><?php echo date('d/m/Y', strtotime($row['check_in_date'])); ?></td>
-                                <td class="text-danger"><?php echo date('d/m/Y', strtotime($row['check_out_date'])); ?></td>
-                                <td><?php echo $nights; ?></td>
-                                <td class="text-right text-info"><?php echo number_format($row['food_charge']); ?></td>
-                                <td class="text-right"><?php echo number_format($total_due); ?> <?php echo $currency_symbol; ?></td>
-                                <td class="text-right text-success font-weight-bold">
-                                    <?php echo number_format($display_amount); ?> <?php echo $currency_symbol; ?>
-                                    <?php echo $paid_status_badge; ?>
-                                </td>
-                                <td class="no-print text-center align-middle">
-                                    <?php if ($remaining <= 0): ?>
-                                    <a href="print_room_receipt.php?booking_id=<?php echo $row['id']; ?>" target="_blank" class="btn btn-sm btn-outline-primary" title="ພິມບິນ">
-                                        <i class="fas fa-print"></i>
-                                    </a>
-                                    <?php else: ?>
-                                    <button class="btn btn-sm btn-outline-secondary" disabled title="ຍັງບໍ່ທັນຊຳລະຄົບ">
-                                        <i class="fas fa-print"></i>
-                                    </button>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
+            <div class="table-responsive">
+                <table id="checkinCheckoutTable" class="table table-bordered table-striped text-center mb-0 table-compact" style="width: 100%;">
+                    <thead class="bg-warning text-white">
                         <tr>
-                            <td colspan="10" class="py-4 text-muted"><?php echo $lang['table_zero_records'] ?? 'ບໍ່ມີຂໍ້ມູນ'; ?></td>
+                            <th><?php echo $lang['room'] ?? 'ຫ້ອງ'; ?></th>
+                            <th><?php echo $lang['customer'] ?? 'ລູກຄ້າ'; ?> / <?php echo $lang['guests'] ?? 'ຈຳນວນຄົນ'; ?></th>
+                            <th><?php echo $lang['phone'] ?? 'ເບີໂທ'; ?></th>
+                            <th><?php echo $lang['checkin_date'] ?? 'ວັນທີເຂົ້າ'; ?></th>
+                            <th><?php echo $lang['checkout_date'] ?? 'ວັນທີອອກ'; ?></th>
+                            <th><?php echo $lang['nights'] ?? 'ຈຳນວນຄືນ'; ?></th>
+                            <th><?php echo $lang['additional_services'] ?? 'ຄ່າອາຫານ'; ?></th>
+                            <th><?php echo $lang['total'] ?? 'ລວມ'; ?></th>
+                            <th><?php echo $lang['payment_amount'] ?? 'ຍອດຊຳລະ'; ?></th>
+                            <th class="no-print"><?php echo $lang['print'] ?? 'ພິມ'; ?></th>
                         </tr>
-                    <?php endif; ?>
-                </tbody>
-                <tfoot>
-                    <tr class="font-weight-bold" style="background-color: #f8f9fa; color: #333; border-top: 2px solid #dee2e6;">
-                        <td colspan="7" class="text-center font-weight-bold text-uppercase" style="vertical-align: middle;"><?php echo $lang['total'] ?? 'TOTAL (ລວມທັງໝົດ)'; ?></td>
-                        <td class="text-right font-weight-bold text-success" style="vertical-align: middle; font-size: 1rem;">
-                            <?php echo number_format($total_paid_sum); ?> <?php echo $currency_symbol; ?>
-                        </td>
-                        <td class="text-center" style="vertical-align: middle; font-size: 0.9rem;">
-                            <?php echo $lang['cash'] ?? 'ເງິນສົດ'; ?>: <?php echo number_format($total_cash_sum); ?> | <?php echo $lang['transfer'] ?? 'ໂອນ'; ?>: <?php echo number_format($total_transfer_sum); ?>
-                        </td>
-                        <td class="no-print"></td>
-                    </tr>
-                </tfoot>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php 
+                        if (count($payments_history) > 0):
+                            foreach($payments_history as $row): 
+                                $subtotal = $row['total_price'] + $row['food_charge'];
+                                $row_tax = round($subtotal * ($tax_percent / 100));
+                                $total_due = $subtotal + $row_tax;
+
+                                $paid_amount = 0;
+                                if ($row['status'] == 'Completed') {
+                                    $paid_amount = $total_due;
+                                } else {
+                                    $paid_amount = $row['deposit_amount'];
+                                }
+                                
+                                $diff = date_diff(date_create($row['check_in_date']), date_create($row['check_out_date']));
+                                $nights = $diff->format("%a");
+                                if ($nights < 1) $nights = 1;
+                                
+                                $paid_status_badge = '';
+                                $remaining = $total_due - $paid_amount;
+                                $display_amount = 0;
+                                
+                                if ($paid_amount >= $total_due) {
+                                    $paid_status_badge = '<br><span class="badge badge-success mt-1" style="font-size: 0.75rem;">' . ($lang['paid'] ?? 'ຈ່າຍແລ້ວ') . '</span>';
+                                    $display_amount = $paid_amount; // Show total paid for completed bookings
+                                } elseif ($paid_amount > 0) {
+                                    $paid_status_badge = '<br><span class="badge badge-warning mt-1" style="font-size: 0.75rem;">' . ($lang['room_fee_paid'] ?? 'ຈ່າຍຄ່າຫ້ອງ') . ': ' . number_format($paid_amount) . '</span>';
+                                    $paid_status_badge .= '<br><span class="badge badge-danger mt-1" style="font-size: 0.75rem;">ຄ້າງຊຳລະ: ' . number_format($remaining) . '</span>';
+                                    $display_amount = $remaining; // Show remaining balance for occupied bookings
+                                } else {
+                                    $paid_status_badge = '<br><span class="badge badge-danger mt-1" style="font-size: 0.75rem;">' . ($lang['unpaid'] ?? 'ຍັງບໍ່ຈ່າຍ') . ': ' . number_format($remaining) . '</span>';
+                                    $display_amount = $remaining; // Show total due
+                                }
+                            ?>
+                                <tr>
+                                    <td>
+                                        <strong><?php echo htmlspecialchars($row['room_number']); ?></strong><br>
+                                        <small class="text-muted"><?php echo htmlspecialchars($row['room_type_localized'] ?: $row['room_type_base']); ?></small>
+                                    </td>
+                                    <td class="text-left">
+                                        <div class="font-weight-bold text-dark"><?php echo htmlspecialchars($row['customer_name']); ?></div>
+                                        <div class="small text-muted"><i class="fas fa-users mr-1"></i> ຈຳນວນຄົນ: <strong><?php echo $row['guest_count']; ?></strong> ຄົນ</div>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($row['customer_phone']); ?></td>
+                                    <td class="text-success font-weight-bold"><?php echo date('d/m/Y', strtotime($row['check_in_date'])); ?></td>
+                                    <td class="text-danger"><?php echo date('d/m/Y', strtotime($row['check_out_date'])); ?></td>
+                                    <td><?php echo $nights; ?></td>
+                                    <td class="text-right text-info"><?php echo number_format($row['food_charge']); ?></td>
+                                    <td class="text-right"><?php echo number_format($total_due); ?> <?php echo $currency_symbol; ?></td>
+                                    <td class="text-right text-success font-weight-bold">
+                                        <?php echo number_format($display_amount); ?> <?php echo $currency_symbol; ?>
+                                        <?php echo $paid_status_badge; ?>
+                                    </td>
+                                    <td class="no-print text-center align-middle">
+                                        <?php if ($remaining <= 0): ?>
+                                        <a href="print_room_receipt.php?booking_id=<?php echo $row['id']; ?>" target="_blank" class="btn btn-sm btn-outline-primary" title="ພິມບິນ">
+                                            <i class="fas fa-print"></i>
+                                        </a>
+                                        <?php else: ?>
+                                        <button class="btn btn-sm btn-outline-secondary" disabled title="ຍັງບໍ່ທັນຊຳລະຄົບ">
+                                            <i class="fas fa-print"></i>
+                                        </button>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="10" class="py-4 text-muted"><?php echo $lang['table_zero_records'] ?? 'ບໍ່ມີຂໍ້ມູນ'; ?></td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                    <tfoot>
+                        <tr class="font-weight-bold" style="background-color: #f8f9fa; color: #333; border-top: 2px solid #dee2e6;">
+                            <td colspan="7" class="text-center font-weight-bold text-uppercase" style="vertical-align: middle;"><?php echo $lang['total'] ?? 'TOTAL (ລວມທັງໝົດ)'; ?></td>
+                            <td class="text-right font-weight-bold text-success" style="vertical-align: middle; font-size: 1rem;">
+                                <?php echo number_format($total_paid_sum); ?> <?php echo $currency_symbol; ?>
+                            </td>
+                            <td class="text-center" style="vertical-align: middle; font-size: 0.9rem;">
+                                <?php echo $lang['cash'] ?? 'ເງິນສົດ'; ?>: <?php echo number_format($total_cash_sum); ?> | <?php echo $lang['transfer'] ?? 'ໂອນ'; ?>: <?php echo number_format($total_transfer_sum); ?>
+                            </td>
+                            <td class="no-print"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
     </div>
 </div>

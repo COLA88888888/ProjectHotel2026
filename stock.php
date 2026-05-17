@@ -15,9 +15,9 @@ if (file_exists($lang_file)) {
 // Handle Add Product
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
     $prod_code = trim($_POST['prod_code']);
-    $prod_name_la = trim($_POST['prod_name_la']);
-    $prod_name_en = trim($_POST['prod_name_en']);
-    $prod_name_cn = trim($_POST['prod_name_cn']);
+    $prod_name_la = trim($_POST['prod_name_la'] ?? '');
+    $prod_name_en = trim($_POST['prod_name_en'] ?? '');
+    $prod_name_cn = trim($_POST['prod_name_cn'] ?? '');
     $category = $_POST['category'];
     $qty = (int)$_POST['qty'];
     $unit = $_POST['unit'];
@@ -42,10 +42,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
             if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $newname)) {
                 $image = $newname;
             } else {
-                $_SESSION['error'] = "ບໍ່ສາມາດຍ້າຍໄຟລ໌ໄປຍັງ Folder ໄດ້! ກວດສອບ Permissions.";
+                $_SESSION['error'] = $lang['error_label'] ?? "ບໍ່ສາມາດຍ້າຍໄຟລ໌ໄປຍັງ Folder ໄດ້! ກວດສອບ Permissions.";
             }
         } else {
-            $_SESSION['error'] = "ນາມສະກຸນໄຟລ໌ (.$ext) ບໍ່ໄດ້ຮັບອະນຸຍາດ! (ອະນຸຍາດ: jpg, png, webp, jfif)";
+            $_SESSION['error'] = $lang['error_label'] ?? "ນາມສະກຸນໄຟລ໌ (.$ext) ບໍ່ໄດ້ຮັບອະນຸຍາດ! (ອະນຸຍາດ: jpg, png, webp, jfif)";
         }
     }
 
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
         header("Location: stock.php");
         exit();
     } else {
-        $_SESSION['error'] = "ເກີດຂໍ້ຜິດພາດໃນການເພີ່ມຂໍ້ມູນ!";
+        $_SESSION['error'] = $lang['error_label'] ?? "ເກີດຂໍ້ຜິດພາດໃນການເພີ່ມຂໍ້ມູນ!";
     }
 }
 
@@ -77,9 +77,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_product'])) {
     $stmtOld->execute([$prod_id]);
     $old = $stmtOld->fetch();
     $prod_code = trim($_POST['prod_code']);
-    $prod_name_la = trim($_POST['prod_name_la']);
-    $prod_name_en = trim($_POST['prod_name_en']);
-    $prod_name_cn = trim($_POST['prod_name_cn']);
+    $prod_name_la = trim($_POST['prod_name_la'] ?? '');
+    $prod_name_en = trim($_POST['prod_name_en'] ?? '');
+    $prod_name_cn = trim($_POST['prod_name_cn'] ?? '');
     $category = $_POST['category'];
     $unit = $_POST['unit'];
     $bprice = (float)str_replace(',', '', $_POST['bprice']);
@@ -131,12 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_product'])) {
         if ($old['prod_name_la'] !== $prod_name_la) {
             $changes[] = "ຊື່ (LA): '{$old['prod_name_la']}' -> '{$prod_name_la}'";
         }
-        if ($old['prod_name_en'] !== $prod_name_en) {
-            $changes[] = "ຊື່ (EN): '{$old['prod_name_en']}' -> '{$prod_name_en}'";
-        }
-        if ($old['prod_name_cn'] !== $prod_name_cn) {
-            $changes[] = "ຊື່ (CN): '{$old['prod_name_cn']}' -> '{$prod_name_cn}'";
-        }
+
         if ($old['category'] !== $category) {
             $changes[] = "ໝວດໝູ່: '{$old['category']}' -> '{$category}'";
         }
@@ -160,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_product'])) {
         logActivity($pdo, "ແກ້ໄຂສິນຄ້າ", $details);
         $_SESSION['success'] = $lang['ok'];
     } else {
-        $_SESSION['error'] = "ບໍ່ສາມາດແກ້ໄຂໄດ້!";
+        $_SESSION['error'] = $lang['error_label'] ?? "ບໍ່ສາມາດແກ້ໄຂໄດ້!";
     }
     header("Location: stock.php");
     exit();
@@ -190,7 +185,7 @@ if (isset($_GET['delete'])) {
         logActivity($pdo, "ລຶບສິນຄ້າ", "ລຶບສິນຄ້າ '{$prod_name}' (ຈຳນວນເຫຼືອຫຼ້າສຸດ: {$prod_qty} {$prod_unit})");
         $_SESSION['success'] = $lang['ok'];
     } else {
-        $_SESSION['error'] = "ບໍ່ສາມາດລຶບໄດ້!";
+        $_SESSION['error'] = $lang['error_label'] ?? "ບໍ່ສາມາດລຶບໄດ້!";
     }
     header("Location: stock.php");
     exit();
@@ -350,14 +345,7 @@ $low_stock_count = $stmtLow->fetch()['low_stock_count'] ?? 0;
                             <label><?php echo $lang['product_name_la']; ?></label>
                             <input type="text" name="prod_name_la" class="form-control" placeholder="Lao..." required>
                         </div>
-                        <div class="form-group">
-                            <label><?php echo $lang['product_name_en']; ?></label>
-                            <input type="text" name="prod_name_en" class="form-control" placeholder="English...">
-                        </div>
-                        <div class="form-group">
-                            <label><?php echo $lang['product_name_cn']; ?></label>
-                            <input type="text" name="prod_name_cn" class="form-control" placeholder="Chinese...">
-                        </div>
+
                         <div class="form-group">
                             <label><?php echo $lang['category']; ?></label>
                             <select name="category" class="form-control" required>
@@ -555,14 +543,7 @@ $low_stock_count = $stmtLow->fetch()['low_stock_count'] ?? 0;
                   <label><?php echo $lang['product_name_la']; ?></label>
                   <input type="text" name="prod_name_la" id="edit_prod_name_la" class="form-control" required>
               </div>
-              <div class="form-group">
-                  <label><?php echo $lang['product_name_en']; ?></label>
-                  <input type="text" name="prod_name_en" id="edit_prod_name_en" class="form-control">
-              </div>
-              <div class="form-group">
-                  <label><?php echo $lang['product_name_cn']; ?></label>
-                  <input type="text" name="prod_name_cn" id="edit_prod_name_cn" class="form-control">
-              </div>
+
               <div class="form-group">
                   <label><?php echo $lang['category']; ?></label>
                   <select name="category" id="edit_category" class="form-control" required>

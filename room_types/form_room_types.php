@@ -14,13 +14,13 @@ if (file_exists($lang_file)) {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save'])) {
-    $room_type_name_la = $_POST['room_type_name_la'];
-    $room_type_name_en = $_POST['room_type_name_en'];
-    $room_type_name_cn = $_POST['room_type_name_cn'];
-    $room_type_code = $_POST['room_type_code'];
-    $description_la = $_POST['description_la'];
-    $description_en = $_POST['description_en'];
-    $description_cn = $_POST['description_cn'];
+    $room_type_name_la = $_POST['room_type_name_la'] ?? '';
+    $room_type_name_en = $_POST['room_type_name_en'] ?? '';
+    $room_type_name_cn = $_POST['room_type_name_cn'] ?? '';
+    $room_type_code = $_POST['room_type_code'] ?? '';
+    $description_la = $_POST['description_la'] ?? '';
+    $description_en = $_POST['description_en'] ?? '';
+    $description_cn = $_POST['description_cn'] ?? '';
 
     // Also update the original columns for backward compatibility
     $room_type_name = $room_type_name_la;
@@ -149,31 +149,7 @@ $desc_col = "description_" . $current_lang;
                             <textarea name="description_la" id="description_la" class="form-control" rows="2" placeholder="Lao..."></textarea>
                         </div>
 
-                        <!-- Advanced Multi-language Options -->
-                        <div class="mt-3">
-                            <a href="javascript:void(0)" class="text-primary small font-weight-bold" data-toggle="collapse" data-target="#advancedOptions">
-                                <i class="fas fa-cog mr-1"></i> <?php echo $lang['advanced_options'] ?? 'Advanced Options'; ?>
-                            </a>
-                        </div>
 
-                        <div id="advancedOptions" class="collapse mt-3 border-top pt-3">
-                            <div class="form-group">
-                                <label><?php echo $lang['room_type_label']; ?> (English)</label>
-                                <input type="text" name="room_type_name_en" class="form-control" placeholder="English...">
-                            </div>
-                            <div class="form-group">
-                                <label><?php echo $lang['room_type_label']; ?> (Chinese)</label>
-                                <input type="text" name="room_type_name_cn" class="form-control" placeholder="Chinese...">
-                            </div>
-                            <div class="form-group">
-                                <label><?php echo $lang['details']; ?> (English)</label>
-                                <textarea name="description_en" class="form-control" rows="2" placeholder="English..."></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label><?php echo $lang['details']; ?> (Chinese)</label>
-                                <textarea name="description_cn" class="form-control" rows="2" placeholder="Chinese..."></textarea>
-                            </div>
-                        </div>
                     </div>
                     <div class="card-footer bg-white border-top-0">
                         <button type="submit" name="save" class="btn btn-primary px-4"><i class="fas fa-save mr-1"></i> <?php echo $lang['save']; ?></button>
@@ -254,8 +230,9 @@ $(document).ready(function() {
             "sSearch":       "<?php echo $lang['dt_search']; ?>",
             "oPaginate": { "sPrevious": "<?php echo $lang['dt_paginate_previous']; ?>", "sNext": "<?php echo $lang['dt_paginate_next']; ?>" }
         },
-        "responsive": true,
-        "autoWidth": false
+        "autoWidth": false,
+        "responsive": false,
+        "pageLength": 10
     });
 
     $('#roomTypeForm').on('submit', function(e) {

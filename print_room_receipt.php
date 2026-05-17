@@ -94,6 +94,10 @@ $final_payable = max(0, $grand_total - $booking['deposit_amount']);
         }
         
         @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
             body { background: none; padding: 0; margin: 0; }
             .receipt { 
                 width: 300px !important; 
@@ -252,13 +256,13 @@ $final_payable = max(0, $grand_total - $booking['deposit_amount']);
 
         <?php if(!$is_deposit_receipt && $booking['deposit_amount'] > 0): ?>
         <div class="info-row" style="color: #28a745; font-weight: normal; font-size: 12px;">
-            <span><?php echo $lang['room_fee_paid'] ?? 'ຊຳລະແລ້ວ (ມັດຈຳ)'; ?>:</span>
+            <span><?php echo $lang['room_fee_paid'] ?? 'ຊຳລະແລ້ວ'; ?>:</span>
             <span><?php echo formatCurrency($booking['deposit_amount']); ?></span>
         </div>
         <?php endif; ?>
 
-        <div class="info-row" style="border-top: 1px solid #000; margin-top: 5px; padding-top: 5px; font-size: 16px; color: red;">
-            <span><?php echo $is_deposit_receipt ? 'ຍອດຊຳລະຄັ້ງນີ້' : ($lang['actual_paid'] ?? 'ຍອດຈ່າຍຕົວຈິງ'); ?>:</span>
+        <div class="info-row" style="border-top: 1px solid #000; margin-top: 5px; padding-top: 5px; font-size: 14px; color: red;">
+            <span><?php echo $lang['actual_paid'] ?? 'ຍອດຈ່າຍຕົວຈິງ'; ?>:</span>
             <span><?php echo number_format($transaction_amount); ?> <?php echo $currency_symbol; ?></span>
         </div>
         

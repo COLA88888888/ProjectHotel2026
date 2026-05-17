@@ -13,10 +13,10 @@ if (file_exists($lang_file)) {
 
 // Handle Add Category
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_category'])) {
-    $name_la = trim($_POST['name_la']);
-    $name_en = trim($_POST['name_en']);
-    $name_cn = trim($_POST['name_cn']);
-    $category_code = trim($_POST['category_code']);
+    $name_la = trim($_POST['name_la'] ?? '');
+    $name_en = trim($_POST['name_en'] ?? '');
+    $name_cn = trim($_POST['name_cn'] ?? '');
+    $category_code = trim($_POST['category_code'] ?? '');
     
     // Original column for compatibility
     $name = $name_la;
@@ -24,9 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_category'])) {
     if (!empty($name_la)) {
         $stmt = $pdo->prepare("INSERT INTO product_categories (name, name_la, name_en, name_cn, category_code) VALUES (?, ?, ?, ?, ?)");
         if ($stmt->execute([$name, $name_la, $name_en, $name_cn, $category_code])) {
-            $_SESSION['success'] = "ເພີ່ມປະເພດສິນຄ້າສຳເລັດແລ້ວ!";
+            $_SESSION['success'] = $lang['success_label'] ?? "ເພີ່ມປະເພດສິນຄ້າສຳເລັດແລ້ວ!";
         } else {
-            $_SESSION['error'] = "ເກີດຂໍ້ຜິດພາດ!";
+            $_SESSION['error'] = $lang['error_label'] ?? "ເກີດຂໍ້ຜິດພາດ!";
         }
     }
     header("Location: form_product_categories.php");
@@ -36,11 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_category'])) {
 // Handle Edit Category
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_category'])) {
     $id = (int)$_POST['id'];
-    $name_la = trim($_POST['name_la']);
-    $name_en = trim($_POST['name_en']);
-    $name_cn = trim($_POST['name_cn']);
-    $old_name = trim($_POST['old_name']);
-    $category_code = trim($_POST['category_code']);
+    $name_la = trim($_POST['name_la'] ?? '');
+    $name_en = trim($_POST['name_en'] ?? '');
+    $name_cn = trim($_POST['name_cn'] ?? '');
+    $old_name = trim($_POST['old_name'] ?? '');
+    $category_code = trim($_POST['category_code'] ?? '');
     
     // Original column for compatibility
     $name = $name_la;
@@ -53,9 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_category'])) {
                 $updateProducts = $pdo->prepare("UPDATE products SET category = ? WHERE category = ?");
                 $updateProducts->execute([$name, $old_name]);
             }
-            $_SESSION['success'] = "ແກ້ໄຂປະເພດສິນຄ້າສຳເລັດແລ້ວ!";
+            $_SESSION['success'] = $lang['success_label'] ?? "ແກ້ໄຂປະເພດສິນຄ້າສຳເລັດແລ້ວ!";
         } else {
-            $_SESSION['error'] = "ເກີດຂໍ້ຜິດພາດ!";
+            $_SESSION['error'] = $lang['error_label'] ?? "ເກີດຂໍ້ຜິດພາດ!";
         }
     }
     header("Location: form_product_categories.php");
@@ -67,7 +67,7 @@ if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
     $stmt = $pdo->prepare("DELETE FROM product_categories WHERE id = ?");
     if ($stmt->execute([$id])) {
-        $_SESSION['success'] = "ລຶບປະເພດສຳເລັດແລ້ວ!";
+        $_SESSION['success'] = $lang['success_label'] ?? "ລຶບປະເພດສຳເລັດແລ້ວ!";
     }
     header("Location: form_product_categories.php");
     exit();
@@ -132,14 +132,7 @@ $name_col = "name_" . $current_lang;
                             <label><?php echo $lang['category_name_la']; ?></label>
                             <input type="text" name="name_la" class="form-control" placeholder="Lao..." required>
                         </div>
-                        <div class="form-group">
-                            <label><?php echo $lang['category_name_en']; ?></label>
-                            <input type="text" name="name_en" class="form-control" placeholder="English...">
-                        </div>
-                        <div class="form-group">
-                            <label><?php echo $lang['category_name_cn']; ?></label>
-                            <input type="text" name="name_cn" class="form-control" placeholder="Chinese...">
-                        </div>
+
                     </div>
                     <div class="card-footer">
                         <button type="submit" name="add_category" class="btn btn-primary btn-block"><i class="fas fa-save"></i> <?php echo $lang['save']; ?></button>
@@ -217,14 +210,7 @@ $name_col = "name_" . $current_lang;
                   <label><?php echo $lang['category_name_la']; ?></label>
                   <input type="text" name="name_la" id="edit_name_la" class="form-control" required>
               </div>
-              <div class="form-group">
-                  <label><?php echo $lang['category_name_en']; ?></label>
-                  <input type="text" name="name_en" id="edit_name_en" class="form-control">
-              </div>
-              <div class="form-group">
-                  <label><?php echo $lang['category_name_cn']; ?></label>
-                  <input type="text" name="name_cn" id="edit_name_cn" class="form-control">
-              </div>
+
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal"><?php echo $lang['cancel']; ?></button>

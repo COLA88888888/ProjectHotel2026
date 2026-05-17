@@ -87,6 +87,10 @@ $grand_total = $food_subtotal + $tax_amount;
         .grand-total { font-size: 15px; font-weight: bold; border-top: 1px solid #000; padding-top: 5px; margin-top: 5px; }
         .footer { text-align: center; margin-top: 15px; font-size: 10px; font-style: italic; }
         @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
             body { background: none; }
             .receipt { max-width: 100%; width: 100%; padding: 0; margin: 0; box-shadow: none; }
             .no-print { display: none; }
