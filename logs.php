@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once 'config/session_check.php';
+enforcePermission('report');
 require_once 'config/db.php';
 
 // --- ສ່ວນດຶງຂໍ້ມູນໄຟລ໌ແປພາສາຕາມ session ທີ່ຜູ້ໃຊ້ກຳລັງເປີດ (Lao, English, Chinese) ---
@@ -15,14 +16,13 @@ if (file_exists($lang_file)) {
 function translateLog($text, $current_lang) {
     if (empty($text)) return '';
     
-    // --- แปลงข้อความภาษาอังกฤษให้เป็นภาษาลาวเมื่อเลือกภาษาลาว ---
+    // ---ແປງຂໍ້ຄວາມພາສາອັງກິດໃຫ້ເປັນພາສາລາວເມື່ອເລືອກພາສາລາວ ---
     if ($current_lang === 'la') {
         $en_to_la = [
-            'Booking ID:' => 'ບິນເລກທີ:',
+            'Booking ID:' => 'ເລກບິນ:',
             'Payment Method:' => 'ວິທີຊຳລະ:',
             'Transfer' => 'ໂອນເງິນ',
             'Cash' => 'ເງິນສົດ',
-            'Card' => 'ບັດ'
         ];
         foreach ($en_to_la as $en_word => $la_word) {
             $text = str_replace($en_word, $la_word, $text);
@@ -221,10 +221,13 @@ $logs = $stmt->fetchAll();
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; }
-        .log-action { font-weight: 700; color: #007bff; }
-        .log-details { font-size: 0.9rem; color: #666; }
-        .log-time { font-size: 0.85rem; color: #888; }
-        .user-badge { font-size: 0.75rem; vertical-align: middle; }
+        .table th, .table td { font-size: 0.85rem !important; vertical-align: middle; }
+        .dataTables_wrapper { font-size: 0.85rem !important; }
+        .dataTables_empty { font-size: 0.85rem !important; }
+        .log-action { font-weight: 700; color: #007bff; font-size: 0.85rem !important; }
+        .log-details { font-size: 0.85rem !important; color: #666; }
+        .log-time { font-size: 0.8rem !important; color: #888; }
+        .user-badge { font-size: 0.7rem !important; vertical-align: middle; }
     </style>
 </head>
 <body class="p-3">
@@ -259,6 +262,9 @@ $logs = $stmt->fetchAll();
                                 <td class="log-time"><?php echo date('d/m/Y H:i:s', strtotime($log['created_at'])); ?></td>
                                 <td>
                                     <strong><?php echo htmlspecialchars($log['fname'] . ' ' . $log['lname']); ?></strong>
+                                    <?php if (!empty($log['user_id'])): ?>
+                                        <small class="text-muted">(ID: <?php echo $log['user_id']; ?>)</small>
+                                    <?php endif; ?>
                                     <br>
                                     <span class="badge badge-secondary user-badge"><?php echo htmlspecialchars($log['user_role'] ?? 'System'); ?></span>
                                 </td>

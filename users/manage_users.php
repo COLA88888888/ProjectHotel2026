@@ -1,8 +1,7 @@
 <?php
-session_start();
 require_once '../config/session_check.php';
+enforcePermission('users');
 require_once '../config/db.php';
-
 // Language Selection Logic
 $current_lang = $_SESSION['lang'] ?? 'la';
 $lang_file = "../lang/{$current_lang}.php";
@@ -11,9 +10,13 @@ if (file_exists($lang_file)) {
 } else {
     include "../lang/la.php";
 }
-
 // Add User
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_user'])) {
+    if ($_SESSION['status'] !== 'ຜູ້ບໍລິຫານ') {
+        $_SESSION['error'] = "ມີແຕ່ຜູ້ບໍລິຫານເທົ່ານັ້ນທີ່ສາມາດເພີ່ມຜູ້ໃຊ້ໄດ້!";
+        header("Location: manage_users.php");
+        exit();
+    }
     $username = trim($_POST['username']);
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
     $fname = trim($_POST['fname']);
@@ -24,34 +27,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_user'])) {
     $status = $_POST['status'];
     $profile_img = 'default_avatar.png';
     $permissions = json_encode($_POST['permissions'] ?? []);
-
     // Image Upload
     if (isset($_FILES['profile_img']) && $_FILES['profile_img']['error'] == 0) {
         $ext = pathinfo($_FILES['profile_img']['name'], PATHINFO_EXTENSION);
         $profile_img = 'user_' . time() . '.' . $ext;
-        move_uploaded_file($_FILES['profile_img']['tmp_name'], '../assets/img/' . $profile_img);
+        move_uploaded_file($_FILES['profile_img']['tmp_name'], '../UserImg/' . $profile_img);
     }
-
     $stmt = $pdo->prepare("INSERT INTO users (username, password, fname, lname, phone, email, address, status, profile_img, permissions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     if ($stmt->execute([$username, $password, $fname, $lname, $phone, $email, $address, $status, $profile_img, $permissions])) {
-        logActivity($pdo, "ເພີ່ມຜູ້ໃຊ້ໃໝ່", "Username: $username, ຊື່: $fname");
-        $_SESSION['success'] = "ເພີ່ມຜູ້ໃຊ້ໃໝ່ສຳເລັດແລ້ວ!";
+        logActivity($pdo, "เปเบเบตเปเบกเบเบนเปเปเบเปเปเปเป", "Username: $username, fname: $fname");
+        $_SESSION['success'] = $lang['add_user_success'];
     } else {
-        $_SESSION['error'] = "ມີບາງຢ່າງຜິດພາດ!";
+        $_SESSION['error'] = $lang['error_occurred'];
     }
     header("Location: manage_users.php");
     exit();
 }
-
 // Edit User
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_user'])) {
+    if ($_SESSION['status'] !== 'ຜູ້ບໍລິຫານ') {
+        $_SESSION['error'] = "ມີແຕ່ຜູ້ບໍລິຫານເທົ່ານັ້ນທີ່ສາມາດແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ໄດ້!";
+        header("Location: manage_users.php");
+        exit();
+    }
     $id = (int)$_POST['id'];
-    
     // Fetch old user details before updating
     $stmtOld = $pdo->prepare("SELECT * FROM users WHERE user_id = ?");
     $stmtOld->execute([$id]);
     $old = $stmtOld->fetch();
-
     $username = trim($_POST['username']);
     $fname = trim($_POST['fname']);
     $lname = trim($_POST['lname']);
@@ -59,30 +62,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_user'])) {
     $email = trim($_POST['email']);
     $address = trim($_POST['address']);
     $status = $_POST['status'];
-    $permissions = json_encode($_POST['permissions'] ?? []);
-
-    $sql = "UPDATE users SET username=?, fname=?, lname=?, phone=?, email=?, address=?, status=?, permissions=? ";
-    $params = [$username, $fname, $lname, $phone, $email, $address, $status, $permissions];
-
+    $sql = "UPDATE users SET username=?, fname=?, lname=?, phone=?, email=?, address=?, status=? ";
+    $params = [$username, $fname, $lname, $phone, $email, $address, $status];
     // Password Update
     if (!empty($_POST['password'])) {
         $sql .= ", password=? ";
         $params[] = password_hash($_POST['password'], PASSWORD_DEFAULT);
     }
-
     // Image Update
     if (isset($_FILES['profile_img']) && $_FILES['profile_img']['error'] == 0) {
         $ext = pathinfo($_FILES['profile_img']['name'], PATHINFO_EXTENSION);
         $profile_img = 'user_' . time() . '.' . $ext;
         if (move_uploaded_file($_FILES['profile_img']['tmp_name'], '../assets/img/' . $profile_img)) {
+            if (!empty($old['profile_img']) && $old['profile_img'] !== 'default_avatar.png' && $old['profile_img'] !== 'default.png' && file_exists('../assets/img/' . $old['profile_img'])) {
+                unlink('../assets/img/' . $old['profile_img']);
+            }
             $sql .= ", profile_img=? ";
             $params[] = $profile_img;
         }
     }
-
     $sql .= " WHERE user_id=?";
     $params[] = $id;
-
     $stmt = $pdo->prepare($sql);
     if ($stmt->execute($params)) {
         $changes = [];
@@ -90,69 +90,68 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_user'])) {
             $changes[] = "Username: '{$old['username']}' -> '{$username}'";
         }
         if ($old['fname'] !== $fname) {
-            $changes[] = "ຊື່: '{$old['fname']}' -> '{$fname}'";
+            $changes[] = "เบเบทเป: '{$old['fname']}' -> '{$fname}'";
         }
         if ($old['lname'] !== $lname) {
-            $changes[] = "ນາມສະກຸນ: '{$old['lname']}' -> '{$lname}'";
+            $changes[] = "เบเบฒเบกเบชเบฐเบเบธเบ: '{$old['lname']}' -> '{$lname}'";
         }
         if ($old['phone'] !== $phone) {
-            $changes[] = "ເບີໂທ: '{$old['phone']}' -> '{$phone}'";
+            $changes[] = "เปเบเบตเปเบ: '{$old['phone']}' -> '{$phone}'";
         }
         if ($old['email'] !== $email) {
-            $changes[] = "ອີເມວ: '{$old['email']}' -> '{$email}'";
+            $changes[] = "เบญเบตเปเบกเบง: '{$old['email']}' -> '{$email}'";
         }
         if ($old['address'] !== $address) {
-            $changes[] = "ທີ່ຢູ່: '{$old['address']}' -> '{$address}'";
+            $changes[] = "เบเบตเปเบขเบนเป: '{$old['address']}' -> '{$address}'";
         }
         if ($old['status'] !== $status) {
-            $changes[] = "ບົດບາດ: '{$old['status']}' -> '{$status}'";
-        }
-        if ($old['permissions'] !== $permissions) {
-            $changes[] = "ສິດເຂົ້າເຖິງ: '{$old['permissions']}' -> '{$permissions}'";
+            $changes[] = "เบเบปเบเบเบฒเบ: '{$old['status']}' -> '{$status}'";
         }
         if (!empty($_POST['password'])) {
-            $changes[] = "ລະຫັດຜ່ານ: ຖືກປ່ຽນແປງ";
+            $changes[] = "เบฅเบฐเบซเบฑเบเบเปเบฒเบ: เบเบทเบเบเปเบฝเบเปเบเบ";
         }
-
-        $details = "ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ '$username'";
+        $details = "เปเบเปเปเบเบเปเปเบกเบนเบเบเบนเปเปเบเป '$username'";
         if (!empty($changes)) {
             $details .= " (" . implode(', ', $changes) . ")";
         } else {
-            $details .= " (ບໍ່ມີການປ່ຽນແປງຂໍ້ມູນ)";
+            $details .= " (เบเปเปเบกเบตเบเบฒเบเบเปเบฝเบเปเบเบเบเปเปเบกเบนเบ)";
         }
-
-        logActivity($pdo, "ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້", $details);
-        $_SESSION['success'] = "ແກ້ໄຂຂໍ້ມູນສຳເລັດ!";
+        logActivity($pdo, "เปเบเปเปเบเบเปเปเบกเบนเบเบเบนเปเปเบเป", $details);
+        $_SESSION['success'] = $lang['edit_user_success'];
     }
     header("Location: manage_users.php");
     exit();
 }
-
 // Delete User
 if (isset($_GET['delete'])) {
+    if ($_SESSION['status'] !== 'ຜູ້ບໍລິຫານ') {
+        $_SESSION['error'] = "ມີແຕ່ຜູ້ບໍລິຫານເທົ່ານັ້ນທີ່ສາມາດລຶບຜູ້ໃຊ້ໄດ້!";
+        header("Location: manage_users.php");
+        exit();
+    }
     $id = (int)$_GET['delete'];
-    
     // Prevent deleting the main admin
     if ($id == 1) {
-        $_SESSION['error'] = "ບໍ່ສາມາດລຶບຜູ້ບໍລິຫານຫຼັກໄດ້!";
+        $_SESSION['error'] = $lang['cannot_delete_admin'];
     } else {
         // Fetch details before delete
-        $stmtOld = $pdo->prepare("SELECT username, fname FROM users WHERE user_id = ?");
+        $stmtOld = $pdo->prepare("SELECT username, fname, profile_img FROM users WHERE user_id = ?");
         $stmtOld->execute([$id]);
         $u = $stmtOld->fetch();
         $old_user = $u['username'] ?? '';
         $old_fname = $u['fname'] ?? '';
-
+        if (!empty($u['profile_img']) && $u['profile_img'] !== 'default_avatar.png' && $u['profile_img'] !== 'default.png' && file_exists('../assets/img/' . $u['profile_img'])) {
+            unlink('../assets/img/' . $u['profile_img']);
+        }
         $stmt = $pdo->prepare("DELETE FROM users WHERE user_id = ?");
         if ($stmt->execute([$id])) {
-            logActivity($pdo, "ລຶບຜູ້ໃຊ້", "ລຶບຜູ້ໃຊ້ '@$old_user' (ຊື່: $old_fname)");
-            $_SESSION['success'] = "ລຶບຜູ້ໃຊ້ສຳເລັດ!";
+            logActivity($pdo, "เบฅเบถเบเบเบนเปเปเบเป", "เบฅเบถเบเบเบนเปเปเบเป '@$old_user' (เบเบทเป: $old_fname)");
+            $_SESSION['success'] = $lang['delete_user_success'];
         }
     }
     header("Location: manage_users.php");
     exit();
 }
-
 // Fetch all users
 $stmt = $pdo->query("SELECT * FROM users ORDER BY user_id DESC");
 $users = $stmt->fetchAll();
@@ -216,7 +215,6 @@ $users = $stmt->fetchAll();
     </style>
 </head>
 <body>
-
 <div class="container-fluid">
     <?php if(isset($_SESSION['success'])): ?>
         <script>
@@ -232,7 +230,6 @@ $users = $stmt->fetchAll();
             });
         </script>
     <?php unset($_SESSION['error']); endif; ?>
-
     <div class="row mb-3 align-items-center page-header">
         <div class="col">
             <h2><i class="fas fa-users-cog text-primary"></i> <?php echo $lang['user_management_title']; ?></h2>
@@ -243,7 +240,6 @@ $users = $stmt->fetchAll();
             </button>
         </div>
     </div>
-
     <!-- ===== DESKTOP TABLE VIEW ===== -->
     <div class="desktop-table">
     <div class="card shadow-sm border-0">
@@ -251,6 +247,7 @@ $users = $stmt->fetchAll();
             <table class="table table-hover table-striped text-center mb-0">
                 <thead class="bg-primary text-white">
                     <tr>
+                        <th>ID</th>
                         <th><?php echo $lang['profile_label']; ?></th>
                         <th class="text-left"><?php echo $lang['full_name']; ?></th>
                         <th><?php echo $lang['username_label']; ?></th>
@@ -270,6 +267,7 @@ $users = $stmt->fetchAll();
                             }
                         ?>
                         <tr>
+                            <td class="align-middle"><strong>#<?php echo $u['user_id']; ?></strong></td>
                             <td><img src="<?php echo $img_path; ?>" class="avatar shadow-sm"></td>
                             <td class="text-left font-weight-bold align-middle">
                                 <?php echo htmlspecialchars($u['fname'] . ' ' . $u['lname']); ?><br>
@@ -286,6 +284,7 @@ $users = $stmt->fetchAll();
                                 <?php endif; ?>
                             </td>
                             <td class="align-middle">
+                                <?php if ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ'): ?>
                                     <button class="btn btn-sm btn-warning text-white btn-edit shadow-sm"
                                     data-id="<?php echo $u['user_id']; ?>"
                                     data-username="<?php echo htmlspecialchars($u['username']); ?>"
@@ -303,6 +302,9 @@ $users = $stmt->fetchAll();
                                 <?php if($u['user_id'] != 1): ?>
                                     <a href="#" class="btn btn-sm btn-danger btn-delete shadow-sm" data-id="<?php echo $u['user_id']; ?>" title="<?php echo $lang['delete']; ?>"><i class="fas fa-trash-alt"></i></a>
                                 <?php endif; ?>
+                                <?php else: ?>
+                                    <span class="text-muted small">ເບິ່ງຢ່າງດຽວ</span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -311,7 +313,6 @@ $users = $stmt->fetchAll();
         </div>
     </div>
     </div>
-
     <!-- ===== MOBILE / TABLET CARD VIEW ===== -->
     <div class="mobile-cards">
         <?php foreach($users as $u): ?>
@@ -327,7 +328,7 @@ $users = $stmt->fetchAll();
                     <div class="user-card-header">
                         <img src="<?php echo $img_path; ?>" class="avatar-mobile shadow-sm">
                         <div class="user-info">
-                            <p class="user-name"><?php echo htmlspecialchars($u['fname'] . ' ' . $u['lname']); ?></p>
+                            <p class="user-name"><?php echo htmlspecialchars($u['fname'] . ' ' . $u['lname']); ?> <small class="text-muted">(ID: <?php echo $u['user_id']; ?>)</small></p>
                             <span class="user-username">@<?php echo htmlspecialchars($u['username']); ?></span>
                         </div>
                         <?php if($u['status'] == 'ຜູ້ບໍລິຫານ'): ?>
@@ -340,6 +341,7 @@ $users = $stmt->fetchAll();
                     <div class="detail-row"><i class="fas fa-envelope"></i> <span><?php echo htmlspecialchars($u['email'] ?: '-'); ?></span></div>
                     <div class="detail-row"><i class="fas fa-map-marker-alt"></i> <span><?php echo htmlspecialchars($u['address'] ?? '-'); ?></span></div>
                     <div class="card-actions">
+                        <?php if ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ'): ?>
                         <button class="btn btn-warning text-white btn-edit"
                             data-id="<?php echo $u['user_id']; ?>"
                             data-username="<?php echo htmlspecialchars($u['username']); ?>"
@@ -351,11 +353,14 @@ $users = $stmt->fetchAll();
                             data-address="<?php echo htmlspecialchars($u['address'] ?? ''); ?>"
                             data-img="<?php echo $img_path; ?>"
                             data-permissions='<?php echo $u['permissions'] ?? '[]'; ?>'
-                            title="ແກ້ໄຂ">
+                            title="<?php echo $lang['edit']; ?>">
                             <i class="fas fa-edit"></i>
                         </button>
                         <?php if($u['user_id'] != 1): ?>
-                            <a href="#" class="btn btn-danger btn-delete" data-id="<?php echo $u['user_id']; ?>" title="ລຶບ"><i class="fas fa-trash-alt"></i></a>
+                            <a href="#" class="btn btn-danger btn-delete" data-id="<?php echo $u['user_id']; ?>" title="<?php echo $lang['delete']; ?>"><i class="fas fa-trash-alt"></i></a>
+                        <?php endif; ?>
+                        <?php else: ?>
+                            <span class="text-muted small">ເບິ່ງຢ່າງດຽວ</span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -363,7 +368,6 @@ $users = $stmt->fetchAll();
         <?php endforeach; ?>
     </div>
 </div>
-
 <!-- Add Modal -->
 <div class="modal fade" id="addModal">
   <div class="modal-dialog modal-lg">
@@ -378,7 +382,7 @@ $users = $stmt->fetchAll();
                   <img id="preview_add" src="../UserImg/default.png" class="avatar-lg shadow-sm">
                   <div class="mb-3">
                       <label class="btn btn-sm btn-outline-primary cursor-pointer">
-                          <i class="fas fa-camera"></i> ເລືອກຮູບໂປຣໄຟລ໌
+                          <i class="fas fa-camera"></i> <?php echo $lang['choose_profile_img']; ?>
                           <input type="file" name="profile_img" class="d-none" accept="image/*" onchange="document.getElementById('preview_add').src = window.URL.createObjectURL(this.files[0])">
                       </label>
                   </div>
@@ -407,57 +411,12 @@ $users = $stmt->fetchAll();
                   <div class="col-md-6 form-group">
                       <label><?php echo $lang['email_label']; ?></label>
                       <input type="email" name="email" class="form-control">
-                  </div>
-                  <div class="col-md-12 form-group">
-                      <label><i class="fas fa-map-marker-alt text-danger"></i> <?php echo $lang['address']; ?></label>
-                      <textarea name="address" class="form-control" rows="2" placeholder="<?php echo $lang['enter_address']; ?>"></textarea>
-                  </div>
-                  <div class="col-md-12 form-group">
+                      <div class="col-md-12 form-group">
                       <label><?php echo $lang['role_label']; ?> <span class="text-danger">*</span></label>
                       <select name="status" class="form-control mb-3" required>
-                          <option value="ພະນັກງານ">ພະນັກງານ (Staff)</option>
-                          <option value="ຜູ້ບໍລິຫານ">ຜູ້ບໍລິຫານ (Admin)</option>
+                          <option value="ພະນັກງານ"><?php echo $lang['staff_role']; ?> (Staff)</option>
+                          <option value="ຜູ້ບໍລິຫານ"><?php echo $lang['admin_role']; ?> (Admin)</option>
                       </select>
-
-                      <label class="d-block mt-3 border-bottom pb-2 mb-3"><?php echo $lang['permissions_label']; ?></label>
-                      <div class="row px-3">
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="bookings" class="custom-control-input" id="p_add_bookings" checked>
-                              <label class="custom-control-label font-weight-normal" for="p_add_bookings">ຈອງຫ້ອງພັກ</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="walkin" class="custom-control-input" id="p_add_walkin" checked>
-                              <label class="custom-control-label font-weight-normal" for="p_add_walkin">ເຂົ້າພັກ (Walk-in)</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="checkout" class="custom-control-input" id="p_add_checkout" checked>
-                              <label class="custom-control-label font-weight-normal" for="p_add_checkout">Check-out</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="room_service" class="custom-control-input" id="p_add_rs" checked>
-                              <label class="custom-control-label font-weight-normal" for="p_add_rs">ບໍລິການເພີ່ມເຕີມ</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="pos" class="custom-control-input" id="p_add_pos" checked>
-                              <label class="custom-control-label font-weight-normal" for="p_add_pos">ຂາຍສິນຄ້າ (POS)</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="stock" class="custom-control-input" id="p_add_stock" checked>
-                              <label class="custom-control-label font-weight-normal" for="p_add_stock">ສະຕ໋ອກສິນຄ້າ</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="report" class="custom-control-input" id="p_add_report">
-                              <label class="custom-control-label font-weight-normal" for="p_add_report">ລາຍງານ</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="rooms" class="custom-control-input" id="p_add_rooms">
-                              <label class="custom-control-label font-weight-normal" for="p_add_rooms">ຈັດການຫ້ອງ</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="settings" class="custom-control-input" id="p_add_settings">
-                              <label class="custom-control-label font-weight-normal" for="p_add_settings">ຕັ້ງຄ່າລະບົບ</label>
-                          </div>
-                      </div>
                   </div>
               </div>
           </div>
@@ -468,13 +427,12 @@ $users = $stmt->fetchAll();
     </div>
   </div>
 </div>
-
 <!-- Edit Modal -->
 <div class="modal fade" id="editModal">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header bg-warning text-white">
-        <h5 class="modal-title"><i class="fas fa-edit"></i> <?php echo $lang['edit']; ?></h5>
+        <h5 class="modal-title"><i class="fas fa-edit"></i> <?php echo $lang['edit_user_title']; ?></h5>
         <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
       </div>
       <form action="" method="post" enctype="multipart/form-data">
@@ -484,97 +442,56 @@ $users = $stmt->fetchAll();
                   <img id="preview_edit" src="" class="avatar-lg shadow-sm">
                   <div class="mb-3">
                       <label class="btn btn-sm btn-outline-warning cursor-pointer">
-                          <i class="fas fa-camera"></i> ປ່ຽນຮູບໂປຣໄຟລ໌
+                          <i class="fas fa-camera"></i> <?php echo $lang['change_profile_img']; ?>
                           <input type="file" name="profile_img" class="d-none" accept="image/*" onchange="document.getElementById('preview_edit').src = window.URL.createObjectURL(this.files[0])">
                       </label>
                   </div>
               </div>
               <div class="row">
                   <div class="col-md-6 form-group">
-                      <label>ຊື່ <span class="text-danger">*</span></label>
+                      <label><?php echo $lang['first_name']; ?> <span class="text-danger">*</span></label>
                       <input type="text" name="fname" id="edit_fname" class="form-control" required>
                   </div>
                   <div class="col-md-6 form-group">
-                      <label>ນາມສະກຸນ <span class="text-danger">*</span></label>
+                      <label><?php echo $lang['last_name']; ?> <span class="text-danger">*</span></label>
                       <input type="text" name="lname" id="edit_lname" class="form-control" required>
                   </div>
                   <div class="col-md-6 form-group">
-                      <label>Username (ໄວ້ເຂົ້າລະບົບ) <span class="text-danger">*</span></label>
+                      <label><?php echo $lang['username_label']; ?> <span class="text-danger">*</span></label>
                       <input type="text" name="username" id="edit_username" class="form-control" required>
                   </div>
                   <div class="col-md-6 form-group">
-                      <label>Password (ປະຫວ່າງໄວ້ຖ້າບໍ່ຕ້ອງການປ່ຽນ)</label>
+                      <label><?php echo $lang['password_label']; ?> (<?php echo $lang['password_placeholder_edit']; ?>)</label>
                       <input type="password" name="password" class="form-control" placeholder="****">
                   </div>
                   <div class="col-md-6 form-group">
-                      <label>ເບີໂທຕິດຕໍ່</label>
+                      <label><?php echo $lang['phone']; ?></label>
                       <input type="text" name="phone" id="edit_phone" class="form-control">
                   </div>
                   <div class="col-md-6 form-group">
-                      <label>ອີເມວ (Email)</label>
+                      <label><?php echo $lang['email_label']; ?></label>
                       <input type="email" name="email" id="edit_email" class="form-control">
                   </div>
                   <div class="col-md-12 form-group">
-                      <label><i class="fas fa-map-marker-alt text-danger"></i> ທີ່ຢູ່</label>
-                      <textarea name="address" id="edit_address" class="form-control" rows="2" placeholder="ບ້ານ, ເມືອງ, ແຂວງ..."></textarea>
+                      <label><i class="fas fa-map-marker-alt text-danger"></i> <?php echo $lang['address']; ?></label>
+                      <textarea name="address" id="edit_address" class="form-control" rows="2" placeholder="<?php echo $lang['enter_address']; ?>"></textarea>
                   </div>
                   <div class="col-md-12 form-group">
-                      <label>ສິດທິການໃຊ້ງານ (Role) <span class="text-danger">*</span></label>
+                      <label><?php echo $lang['role_label']; ?> <span class="text-danger">*</span></label>
                       <select name="status" id="edit_status" class="form-control mb-3" required>
-                          <option value="ພະນັກງານ">ພະນັກງານ (Staff)</option>
-                          <option value="ຜູ້ບໍລິຫານ">ຜູ້ບໍລິຫານ (Admin)</option>
+                          <option value="ພະນັກງານ"><?php echo $lang['staff_role']; ?> (Staff)</option>
+                          <option value="ຜູ້ບໍລິຫານ"><?php echo $lang['admin_role']; ?> (Admin)</option>
                       </select>
-
-                      <label class="d-block mt-3 border-bottom pb-2 mb-3">ກຳນົດສິດການເຂົ້າເຖິງ (Permissions)</label>
-                      <div class="row px-3">
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="bookings" class="custom-control-input edit-perm" id="p_edit_bookings">
-                              <label class="custom-control-label font-weight-normal" for="p_edit_bookings">ຈອງຫ້ອງພັກ</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="walkin" class="custom-control-input edit-perm" id="p_edit_walkin">
-                              <label class="custom-control-label font-weight-normal" for="p_edit_walkin">ເຂົ້າພັກ (Walk-in)</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="checkout" class="custom-control-input edit-perm" id="p_edit_checkout">
-                              <label class="custom-control-label font-weight-normal" for="p_edit_checkout">Check-out</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="room_service" class="custom-control-input edit-perm" id="p_edit_rs">
-                              <label class="custom-control-label font-weight-normal" for="p_edit_rs">ບໍລິການເພີ່ມເຕີມ</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="pos" class="custom-control-input edit-perm" id="p_edit_pos">
-                              <label class="custom-control-label font-weight-normal" for="p_edit_pos">ຂາຍສິນຄ້າ (POS)</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="stock" class="custom-control-input edit-perm" id="p_edit_stock">
-                              <label class="custom-control-label font-weight-normal" for="p_edit_stock">ສະຕ໋ອກສິນຄ້າ</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="report" class="custom-control-input edit-perm" id="p_edit_report">
-                              <label class="custom-control-label font-weight-normal" for="p_edit_report">ລາຍງານ</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="rooms" class="custom-control-input edit-perm" id="p_edit_rooms">
-                              <label class="custom-control-label font-weight-normal" for="p_edit_rooms">ຈັດການຫ້ອງ</label>
-                          </div>
-                          <div class="col-6 col-md-4 custom-control custom-checkbox mb-2">
-                              <input type="checkbox" name="permissions[]" value="settings" class="custom-control-input edit-perm" id="p_edit_settings">
-                              <label class="custom-control-label font-weight-normal" for="p_edit_settings">ຕັ້ງຄ່າລະບົບ</label>
-                          </div>
-                      </div>
                   </div>
               </div>
           </div>
           <div class="modal-footer bg-light">
-            <button type="submit" name="edit_user" class="btn btn-warning text-white px-4"><i class="fas fa-save"></i> ບັນທຶກການແກ້ໄຂ</button>
+            <button type="submit" name="edit_user" class="btn btn-warning text-white px-4"><i class="fas fa-save"></i> <?php echo $lang['save_changes']; ?></button>
           </div>
       </form>
     </div>
   </div>
 </div>
-
 <script src="../plugins/jquery/jquery.min.js"></script>
 <script src="../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="../sweetalert/dist/sweetalert2.all.min.js"></script>
@@ -589,21 +506,8 @@ $('.btn-edit').on('click', function() {
     $('#edit_address').val($(this).data('address'));
     $('#edit_status').val($(this).data('status'));
     $('#preview_edit').attr('src', $(this).data('img'));
-
-    // Clear and set checkboxes
-    $('.edit-perm').prop('checked', false);
-    var perms = $(this).data('permissions');
-    if(Array.isArray(perms)){
-        perms.forEach(function(p){
-            $('#p_edit_' + p).prop('checked', true);
-            // Handle some mapping issues if any
-            if(p == 'room_service') $('#p_edit_rs').prop('checked', true);
-        });
-    }
-
     $('#editModal').modal('show');
 });
-
 $('.btn-delete').on('click', function(e) {
     e.preventDefault();
     var id = $(this).data('id');

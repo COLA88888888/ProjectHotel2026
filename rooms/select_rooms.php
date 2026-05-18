@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once '../config/session_check.php';
+enforcePermission('rooms');
 require_once '../config/db.php';
 
 // Language Selection Logic
@@ -11,8 +12,17 @@ if (file_exists($lang_file)) {
     include "../lang/la.php";
 }
 
+$is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
+$can_edit = ($is_admin || hasPermission('rooms_edit'));
+$can_delete = ($is_admin || hasPermission('rooms_delete'));
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save'])) {
+    if (!$can_edit) {
+        $_SESSION['error'] = "ທ່ານບໍ່ມີສິດໃນການເພີ່ມຂໍ້ມູນຫ້ອງ!";
+        header("Location: select_rooms.php");
+        exit();
+    }
     $room_number = $_POST['room_number'];
     $room_type = $_POST['room_type'];
     $bed_type = $_POST['bed_type'];
@@ -36,6 +46,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save'])) {
 
 // Handle delete
 if (isset($_GET['delete'])) {
+    if (!$can_delete) {
+        $_SESSION['error'] = "ທ່ານບໍ່ມີສິດໃນການລຶບຂໍ້ມູນຫ້ອງພັກ!";
+        header("Location: select_rooms.php");
+        exit();
+    }
     $id = $_GET['delete'];
     
     // Fetch details before delete
@@ -66,8 +81,8 @@ if (isset($_POST['update_housekeeping'])) {
     $stmtRoom->execute([$id]);
     $roomNum = $stmtRoom->fetchColumn() ?: '';
 
-    $stmt = $pdo->prepare("UPDATE rooms SET housekeeping_status = ? WHERE id = ?");
-    $ok = $stmt->execute([$hk_status, $id]);
+    $stmt = $pdo->prepare("UPDATE rooms SET housekeeping_status = ?, status = CASE WHEN status NOT IN ('Occupied', 'Booked') AND ? IN ('ພ້ອມໃຊ້ງານ', 'Ready') THEN 'Available' ELSE status END WHERE id = ?");
+    $ok = $stmt->execute([$hk_status, $hk_status, $id]);
     if ($ok) {
         logActivity($pdo, "ອັບເດດສະຖານະຄວາມພ້ອມ", "ອັບເດດສະຖານະຄວາມພ້ອມຂອງຫ້ອງ $roomNum ເປັນ: $hk_status");
     }
@@ -120,35 +135,41 @@ $room_types = $stmtTypes->fetchAll();
     <!-- Noto Sans Lao Looped -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f8f9fa; padding: 20px; color: #333; }
+        body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f8f9fa; padding: 20px; color: #333; font-size: 0.9rem; }
         .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; }
         .card-header { background-color: #fff; border-bottom: 1px solid #eee; padding: 15px 20px; }
         .card-title { font-weight: 700; color: #2c3e50; font-size: 1.1rem; }
         
         /* Table Styling */
-        #roomTable thead th { background-color: #fcfcfc; color: #666; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; border-bottom: 2px solid #eee; padding: 15px 10px; }
-        #roomTable tbody td { vertical-align: middle; padding: 12px 10px; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; }
+        #roomTable thead th { background-color: #fcfcfc; color: #666; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; border-bottom: 2px solid #eee; padding: 10px 8px; }
+        #roomTable tbody td { vertical-align: middle; padding: 8px 8px; border-bottom: 1px solid #f0f0f0; font-size: 0.82rem; }
+        
+        /* Prevent unnecessary scrollbar on desktop */
+        @media (min-width: 768px) {
+            .table-responsive { overflow-x: hidden !important; }
+        }
         
         /* Badges */
-        .badge-status { border-radius: 8px; font-weight: 600; padding: 6px 12px; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .badge-status { border-radius: 8px; font-weight: 600; padding: 4px 8px; font-size: 0.78rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .badge-available { background-color: #d4edda !important; color: #155724 !important; border: 1px solid #c3e6cb; }
         .badge-booked { background-color: #fff3cd !important; color: #856404 !important; border: 1px solid #ffeeba; }
         .badge-occupied { background-color: #f8d7da !important; color: #721c24 !important; border: 1px solid #f5c6cb; }
         
         /* Housekeeping Select */
-        .hk-select { border: 2px solid #ddd; border-radius: 8px; padding: 6px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; outline: none; width: 140px; text-align: center; }
+        .hk-select { border: 2px solid #ddd; border-radius: 8px; padding: 4px 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s; outline: none; width: 115px; text-align: center; }
         .hk-select.hk-ready { border-color: #2e86de; background: #fff; color: #2e86de; }
         .hk-select.hk-cleaning { border-color: #f1c40f; background: #fff; color: #f39c12; }
         .hk-select.hk-maintenance { border-color: #95a5a6; background: #fff; color: #7f8c8d; }
         .hk-saving { opacity: 0.5; pointer-events: none; }
+        .hk-select:disabled { background-color: #f1f2f6 !important; color: #a4b0be !important; border-color: #ced6e0 !important; cursor: not-allowed; opacity: 0.8; }
         
         /* Actions */
-        .btn-warning { background: transparent !important; border: none !important; color: #ffc107 !important; font-size: 1.15rem; padding: 0 8px; box-shadow: none !important; }
-        .btn-danger { background: transparent !important; border: none !important; color: #dc3545 !important; font-size: 1.15rem; padding: 0 8px; box-shadow: none !important; }
+        .btn-warning { background: transparent !important; border: none !important; color: #ffc107 !important; font-size: 1rem; padding: 0 6px; box-shadow: none !important; }
+        .btn-danger { background: transparent !important; border: none !important; color: #dc3545 !important; font-size: 1rem; padding: 0 6px; box-shadow: none !important; }
         .btn-warning:hover, .btn-danger:hover { opacity: 0.7; }
         
         /* Room number styling */
-        .room-number-cell { font-size: 1.1rem; font-weight: 800; color: #2c3e50; }
+        .room-number-cell { font-size: 0.95rem; font-weight: 800; color: #2c3e50; }
         .price-cell { font-weight: 600; color: #27ae60; }
         .currency-label { font-size: 0.75rem; color: #999; display: block; margin-top: 2px; }
     </style>
@@ -185,6 +206,7 @@ $room_types = $stmtTypes->fetchAll();
 
     <div class="row">
         <!-- Form Section -->
+        <?php if ($can_edit): ?>
         <div class="col-md-3">
             <div class="card card-primary card-outline">
                 <div class="card-header">
@@ -192,6 +214,10 @@ $room_types = $stmtTypes->fetchAll();
                 </div>
                 <form action="" method="post" id="roomForm">
                     <div class="card-body">
+                        <div class="form-group">
+                            <label><?php echo $lang['room_code']; ?></label>
+                            <input type="text" class="form-control" value="[ <?php echo $lang['auto_generated']; ?> ]" readonly style="background-color: #e9ecef; font-weight: 700; color: #6c757d;">
+                        </div>
                         <div class="form-group">
                             <label><?php echo $lang['room_number_label']; ?></label>
                             <input type="text" name="room_number" id="room_number" class="form-control" placeholder="<?php echo $lang['enter_room_number']; ?>">
@@ -245,9 +271,10 @@ $room_types = $stmtTypes->fetchAll();
                 </form>
             </div>
         </div>
+        <?php endif; ?>
 
         <!-- Table Section -->
-        <div class="col-md-9">
+        <div class="<?php echo $can_edit ? 'col-md-9' : 'col-md-12'; ?>">
             <div class="card card-outline card-info">
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-list"></i> <?php echo $lang['all_rooms_detail']; ?></h3>
@@ -257,6 +284,7 @@ $room_types = $stmtTypes->fetchAll();
                         <thead class="bg-light">
                             <tr>
                                 <th><?php echo $lang['no']; ?></th>
+                                <th><?php echo $lang['room_code'] ?? 'ລະຫັດຫ້ອງ'; ?></th>
                                 <th><?php echo $lang['room']; ?></th>
                                 <th><?php echo $lang['room_types_header']; ?></th>
                                 <th><?php echo $lang['bed_type_header']; ?></th>
@@ -271,6 +299,7 @@ $room_types = $stmtTypes->fetchAll();
                                 <?php $i = 1; foreach ($rooms as $row): ?>
                                     <tr>
                                         <td><?php echo $i++; ?></td>
+                                        <td><strong>#<?php echo $row['id']; ?></strong></td>
                                         <td class="room-number-cell"><?php echo htmlspecialchars($row['room_number']); ?></td>
                                         <td><?php 
                                              $r_type_mapped = $row[$rt_name_col] ?: $row['room_type'];
@@ -326,8 +355,9 @@ $room_types = $stmtTypes->fetchAll();
                                                 $hk_class = 'hk-ready';
                                                 if ($hk == 'Cleaning') $hk_class = 'hk-cleaning';
                                                 elseif ($hk == 'Maintenance') $hk_class = 'hk-maintenance';
+                                                $is_disabled = ($row['status'] == 'Booked' || $row['status'] == 'Occupied') ? 'disabled' : '';
                                             ?>
-                                            <select class="hk-select <?php echo $hk_class; ?>" data-room-id="<?php echo $row['id']; ?>">
+                                            <select class="hk-select <?php echo $hk_class; ?>" data-room-id="<?php echo $row['id']; ?>" data-status="<?php echo htmlspecialchars($row['status']); ?>" <?php echo $is_disabled; ?>>
                                                 <option value="ພ້ອມໃຊ້ງານ" <?php echo ($hk == 'ພ້ອມໃຊ້ງານ' || $hk == 'Ready') ? 'selected' : ''; ?>><?php echo $lang['ready']; ?></option>
                                                 <option value="Cleaning" <?php echo ($hk == 'Cleaning') ? 'selected' : ''; ?>><?php echo $lang['cleaning']; ?></option>
                                                 <option value="Maintenance" <?php echo ($hk == 'Maintenance') ? 'selected' : ''; ?>><?php echo $lang['maintenance']; ?></option>
@@ -335,15 +365,22 @@ $room_types = $stmtTypes->fetchAll();
                                         </td>
                                         <td style="width: 100px;">
                                             <div class="btn-group btn-group-sm">
+                                                <?php if ($can_edit): ?>
                                                 <a href="edit_room.php?id=<?php echo $row['id']; ?>" class="btn btn-warning text-white" title="<?php echo $lang['edit']; ?>"><i class="fas fa-edit"></i></a>
+                                                <?php endif; ?>
+                                                <?php if ($can_delete): ?>
                                                 <a href="#" class="btn btn-danger btn-delete" data-id="<?php echo $row['id']; ?>" title="<?php echo $lang['delete']; ?>"><i class="fas fa-trash-alt"></i></a>
+                                                <?php endif; ?>
+                                                <?php if (!$can_edit && !$can_delete): ?>
+                                                <span class="text-muted small">ເບິ່ງຢ່າງດຽວ</span>
+                                                <?php endif; ?>
                                             </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="8" class="text-muted"><?php echo $lang['table_zero_records']; ?></td>
+                                    <td colspan="9" class="text-muted"><?php echo $lang['table_zero_records']; ?></td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -446,6 +483,7 @@ $(document).ready(function() {
     $(document).on('change', '.hk-select', function() {
         var $sel = $(this);
         var roomId = $sel.data('room-id');
+        var currentStatus = $sel.data('status');
         var newStatus = $sel.val();
         
         $sel.addClass('hk-saving');
@@ -461,6 +499,18 @@ $(document).ready(function() {
             if (newStatus === 'ພ້ອມໃຊ້ງານ') $sel.addClass('hk-ready');
             else if (newStatus === 'Cleaning') $sel.addClass('hk-cleaning');
             else $sel.addClass('hk-maintenance');
+            
+            // Dynamically update status column if current status is Available
+            if (currentStatus === 'Available') {
+                var $statusTd = $sel.closest('tr').find('td').eq(6);
+                if (newStatus === 'ພ້ອມໃຊ້ງານ') {
+                    $statusTd.html('<span class="badge badge-available badge-status"><?php echo $lang['available']; ?></span>');
+                } else if (newStatus === 'Cleaning') {
+                    $statusTd.html('<span class="badge badge-booked badge-status"><?php echo $lang['cleaning']; ?></span>');
+                } else {
+                    $statusTd.html('<span class="badge badge-secondary badge-status"><?php echo $lang['maintenance']; ?></span>');
+                }
+            }
             
             // Show toast
             Swal.fire({

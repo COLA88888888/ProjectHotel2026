@@ -22,24 +22,45 @@ $flags = [
 ];
 $active_flag = $flags[$current_lang] ?? $flags['la'];
 
-if (!isset($_SESSION['checked']) || $_SESSION['checked'] !== 1) {
-    header("Location: index.php");
-    exit();
-}
+require_once 'config/session_check.php';
 
 // Fetch hotel logo & name from settings
 require_once 'config/db.php';
 try {
     $current_lang = $_SESSION['lang'] ?? 'la';
     $name_key = "hotel_name_" . $current_lang;
-    $stmtLogo = $pdo->query("SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('hotel_logo', '$name_key', 'hotel_name')");
+    $stmtLogo = $pdo->query("SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('hotel_logo', '$name_key', 'hotel_name', 'package_name', 'package_expires')");
     $hotel_settings = $stmtLogo->fetchAll(PDO::FETCH_KEY_PAIR);
     
-    $hotel_logo = !empty($hotel_settings['hotel_logo']) ? 'assets/img/logo/' . $hotel_settings['hotel_logo'] : 'https://via.placeholder.com/150?text=Logo';
+    $hotel_logo = !empty($hotel_settings['hotel_logo']) ? 'assets/img/logo/' . $hotel_settings['hotel_logo'] : 'assets/img/image.jpg';
+    if (!file_exists($hotel_logo)) {
+        $hotel_logo = 'assets/img/image.jpg';
+    }
     $hotel_name = !empty($hotel_settings[$name_key]) ? $hotel_settings[$name_key] : ($hotel_settings['hotel_name'] ?? 'ລະບົບໂຮງແຮມ');
+    
+    // Calculate package days remaining
+    $pkg_name = $hotel_settings['package_name'] ?? '';
+    if (empty($pkg_name)) {
+        $pkg_name = $lang['package_status_undefined'] ?? 'ບໍ່ທັນກຳນົດເທື່ອ';
+    }
+    
+    $pkg_expires = $hotel_settings['package_expires'] ?? '';
+    if (empty($pkg_expires) || $pkg_expires === '0000-00-00') {
+        $pkg_status_text = $lang['package_status_undefined'] ?? 'ບໍ່ທັນກຳນົດເທື່ອ';
+        $days_remaining = 99999;
+    } else {
+        $today = new DateTime(date('Y-m-d'));
+        $expiry = new DateTime($pkg_expires);
+        $interval = $today->diff($expiry);
+        $days_remaining = (int)$interval->format('%r%a');
+        $pkg_status_text = sprintf($lang['package_status_remaining'] ?? 'ເຫຼືອ %s ວັນ', $days_remaining);
+    }
 } catch (Exception $e) {
-    $hotel_logo = 'https://via.placeholder.com/150?text=Logo';
+    $hotel_logo = 'assets/img/image.jpg';
     $hotel_name = 'ລະບົບໂຮງແຮມ';
+    $pkg_name = $lang['package_status_undefined'] ?? 'ບໍ່ທັນກຳນົດເທື່ອ';
+    $pkg_status_text = $lang['package_status_undefined'] ?? 'ບໍ່ທັນກຳນົດເທື່ອ';
+    $days_remaining = 99999;
 }
 
 $session_img = !empty($_SESSION['profile_img']) ? $_SESSION['profile_img'] : 'default.png';
@@ -191,13 +212,22 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
         <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
-        <a href="orders/form_orders.php" target="frame" class="nav-link"><b><?php echo $lang['home']; ?></b></a>
+        <a href="Homepage.php" target="frame" class="nav-link"><b><?php echo $lang['home']; ?></b></a>
       </li>
       
     </ul>
 
     <!-- Right navbar links -->
     <ul class="navbar-nav ml-auto">
+      <!-- Package Info Badge (PC Only) -->
+      <?php if ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ'): ?>
+      <li class="nav-item d-none d-md-flex align-items-center mr-3">
+          <span class="badge py-2 px-3 rounded-pill shadow-sm" style="background: linear-gradient(135deg, #f39c12 0%, #f1c40f 100%); color: #1e272e; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.2);">
+              <i class="fas fa-crown text-danger animate-pulse"></i>
+              <span><?php echo $lang['package_usage'] ?? 'ເເພັກເກັດນຳໃຊ້'; ?>: <?php echo $pkg_status_text; ?></span>
+          </span>
+      </li>
+      <?php endif; ?>
      
       <!-- Notifications Dropdown -->
       <li class="nav-item dropdown">
@@ -226,11 +256,13 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
       </li>  
 
       <!-- Usage Package -->
-      <!-- <li class="nav-item">
+      <?php if ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ'): ?>
+      <li class="nav-item">
         <a class="nav-link" href="#" role="button" style="color: #28a745; font-weight: bold;">
           <i class="fas fa-crown"></i> ແພັກເກັດການນຳໃຊ້
         </a>
-      </li> -->
+      </li>
+      <?php endif; ?>
 
       <!-- Language Dropdown -->
       <li class="nav-item dropdown">
@@ -302,7 +334,7 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
           <li class="nav-header text-uppercase" style="color: rgba(255,255,255,0.5); font-size: 0.7rem; letter-spacing: 1.5px; padding-top: 20px;"><?php echo $lang['customer_service']; ?></li>
           <?php if($is_admin || in_array('walkin', $perms)): ?>
           <li class="nav-item">
-            <a href="walkin.php" target="frame" class="nav-link">
+            <a href="services/walkin.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-door-open"></i>
               <p><?php echo $lang['check_in']; ?></p>
             </a>
@@ -310,7 +342,7 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
           <?php endif; ?>
           <?php if($is_admin || in_array('bookings', $perms)): ?>
           <li class="nav-item">
-            <a href="reserve.php" target="frame" class="nav-link">
+            <a href="services/reserve.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-calendar-alt"></i>
               <p><?php echo $lang['bookings']; ?></p>
             </a>
@@ -318,7 +350,7 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
           <?php endif; ?>
           <?php if($is_admin || in_array('checkout', $perms)): ?>
           <li class="nav-item">
-            <a href="checkout.php" target="frame" class="nav-link">
+            <a href="services/checkout.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-receipt"></i>
               <p><?php echo $lang['check_out']; ?></p>
             </a>
@@ -326,7 +358,7 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
           <?php endif; ?>
           <?php if($is_admin || in_array('room_service', $perms)): ?>
           <li class="nav-item">
-            <a href="room_service.php" target="frame" class="nav-link">
+            <a href="services/room_service.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-bell"></i>
               <p><?php echo $lang['room_service']; ?></p>
             </a>
@@ -338,7 +370,7 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
           <li class="nav-header text-uppercase" style="color: rgba(255,255,255,0.5); font-size: 0.7rem; letter-spacing: 1.5px; padding-top: 20px;"><?php echo $lang['stock_and_sales']; ?></li>
           <?php if($is_admin || in_array('pos', $perms)): ?>
           <li class="nav-item">
-            <a href="pos.php" target="frame" class="nav-link">
+            <a href="products/pos.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-cash-register"></i>
               <p><?php echo $lang['pos']; ?></p>
             </a>
@@ -346,7 +378,7 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
           <?php endif; ?>
           <?php if($is_admin || in_array('stock', $perms)): ?>
           <li class="nav-item">
-            <a href="stock.php" target="frame" class="nav-link">
+            <a href="products/stock.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-boxes"></i>
               <p><?php echo $lang['stock']; ?></p>
             </a>
@@ -358,26 +390,26 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
           <li class="nav-header text-uppercase" style="color: rgba(255,255,255,0.5); font-size: 0.7rem; letter-spacing: 1.5px; padding-top: 20px;"><?php echo $lang['management_and_reports']; ?></li>
           <?php if($is_admin || in_array('report', $perms)): ?>
           <li class="nav-item">
-            <a href="report.php" target="frame" class="nav-link">
+            <a href="reports/report.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-chart-bar"></i>
               <p><?php echo $lang['financial_report']; ?></p>
             </a>
           </li>
 
           <li class="nav-item">
-            <a href="report_pos_history.php" target="frame" class="nav-link">
+            <a href="reports/report_pos_history.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-shopping-cart"></i>
               <p><?php echo $lang['pos_history'] ?? 'ປະຫວັດການຂາຍ POS'; ?></p>
             </a>
           </li>
           <li class="nav-item">
-            <a href="report_checkin_checkout.php" target="frame" class="nav-link">
+            <a href="reports/report_checkin_checkout.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-exchange-alt"></i>
               <p><?php echo $lang['checkin_checkout_report']; ?></p>
             </a>
           </li>
           <li class="nav-item">
-            <a href="expenses.php" target="frame" class="nav-link">
+            <a href="reports/expenses.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-file-invoice-dollar"></i>
               <p><?php echo $lang['expenses_management']; ?></p>
             </a>
@@ -437,6 +469,12 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
                 <a href="users/manage_users.php" target="frame" class="nav-link">
                   <i class="fas fa-users-cog nav-icon"></i>
                   <p><?php echo $lang['users']; ?></p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="users/manage_permissions.php" target="frame" class="nav-link">
+                  <i class="fas fa-user-shield nav-icon"></i>
+                  <p>ກຳນົດສິດການໃຊ້ງານ</p>
                 </a>
               </li>
               <?php endif; ?>
@@ -575,17 +613,14 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
     // Sync active menu with iframe
     $('iframe[name="frame"]').on('load', function() {
       try {
-        var iframeSrc = this.contentWindow.location.href;
+        var iframeSrc = this.contentWindow.location.href.toLowerCase();
         $navLinks.removeClass('active');
         $('.nav-sidebar .nav-item > .nav-link').removeClass('active');
         $navLinks.each(function() {
           var href = $(this).attr('href');
-          var hrefBase = href ? href.split('?')[0] : '';
+          var hrefBase = href ? href.split('?')[0].toLowerCase() : '';
           
-          var url = new URL(iframeSrc);
-          var iframeBase = url.pathname.split('/').pop();
-          
-          if (hrefBase && iframeBase === hrefBase) {
+          if (hrefBase && iframeSrc.indexOf(hrefBase) !== -1) {
             $(this).addClass('active');
             var $parentLi = $(this).closest('.nav-treeview').closest('.nav-item');
             if ($parentLi.length) {

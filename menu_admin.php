@@ -22,10 +22,7 @@ $flags = [
 ];
 $active_flag = $flags[$current_lang] ?? $flags['la'];
 
-if (!isset($_SESSION['checked']) || $_SESSION['checked'] !== 1) {
-    header("Location: index.php");
-    exit();
-}
+require_once 'config/session_check.php';
 
 // Security: Only allow 'ຜູ້ບໍລິຫານ' (Admin) to access this page
 if ($_SESSION['status'] !== 'ຜູ້ບໍລິຫານ') {
@@ -41,14 +38,38 @@ require_once 'config/db.php';
 try {
     $current_lang = $_SESSION['lang'] ?? 'la';
     $name_key = "hotel_name_" . $current_lang;
-    $stmtLogo = $pdo->query("SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('hotel_logo', '$name_key', 'hotel_name')");
+    $stmtLogo = $pdo->query("SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('hotel_logo', '$name_key', 'hotel_name', 'package_name', 'package_expires')");
     $hotel_settings = $stmtLogo->fetchAll(PDO::FETCH_KEY_PAIR);
     
-    $hotel_logo = !empty($hotel_settings['hotel_logo']) ? 'assets/img/logo/' . $hotel_settings['hotel_logo'] : 'https://via.placeholder.com/150?text=Logo';
+    $hotel_logo = !empty($hotel_settings['hotel_logo']) ? 'assets/img/logo/' . $hotel_settings['hotel_logo'] : 'assets/img/image.jpg';
+    if (!file_exists($hotel_logo)) {
+        $hotel_logo = 'assets/img/image.jpg';
+    }
     $hotel_name = !empty($hotel_settings[$name_key]) ? $hotel_settings[$name_key] : ($hotel_settings['hotel_name'] ?? 'ລະບົບໂຮງແຮມ');
+    
+    // Calculate package days remaining
+    $pkg_name = $hotel_settings['package_name'] ?? '';
+    if (empty($pkg_name)) {
+        $pkg_name = $lang['package_status_undefined'] ?? 'ບໍ່ທັນກຳນົດເທື່ອ';
+    }
+    
+    $pkg_expires = $hotel_settings['package_expires'] ?? '';
+    if (empty($pkg_expires) || $pkg_expires === '0000-00-00') {
+        $pkg_status_text = $lang['package_status_undefined'] ?? 'ບໍ່ທັນກຳນົດເທື່ອ';
+        $days_remaining = 99999;
+    } else {
+        $today = new DateTime(date('Y-m-d'));
+        $expiry = new DateTime($pkg_expires);
+        $interval = $today->diff($expiry);
+        $days_remaining = (int)$interval->format('%r%a');
+        $pkg_status_text = sprintf($lang['package_status_remaining'] ?? 'ເຫຼືອ %s ວັນ', $days_remaining);
+    }
 } catch (Exception $e) {
-    $hotel_logo = 'https://via.placeholder.com/150?text=Logo';
+    $hotel_logo = 'assets/img/image.jpg';
     $hotel_name = 'ລະບົບໂຮງແຮມ';
+    $pkg_name = $lang['package_status_undefined'] ?? 'ບໍ່ທັນກຳນົດເທື່ອ';
+    $pkg_status_text = $lang['package_status_undefined'] ?? 'ບໍ່ທັນກຳນົດເທື່ອ';
+    $days_remaining = 99999;
 }
 ?>
 <html>
@@ -190,6 +211,13 @@ try {
 
     <!-- Right navbar links -->
     <ul class="navbar-nav ml-auto">
+      <!-- Package Info Badge (PC Only) -->
+      <li class="nav-item d-none d-md-flex align-items-center mr-3">
+          <span class="badge py-2 px-3 rounded-pill shadow-sm" style="background: linear-gradient(135deg, #f39c12 0%, #f1c40f 100%); color: #1e272e; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.2);">
+              <i class="fas fa-crown text-danger animate-pulse"></i>
+              <span><?php echo $lang['package_usage'] ?? 'ເເພັກເກັດນຳໃຊ້'; ?>: <?php echo $pkg_status_text; ?></span>
+          </span>
+      </li>
       <!-- Notifications Dropdown -->
       <li class="nav-item dropdown">
         <a class="nav-link" data-toggle="dropdown" href="#">
@@ -285,7 +313,7 @@ try {
           <li class="nav-header text-uppercase" style="color: rgba(255,255,255,0.5); font-size: 0.7rem; letter-spacing: 1.5px; padding-top: 20px;"><?php echo $lang['customer_service']; ?></li>
           <?php if($is_admin || in_array('walkin', $perms)): ?>
           <li class="nav-item">
-            <a href="walkin.php" target="frame" class="nav-link">
+            <a href="services/walkin.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-door-open"></i>
               <p><?php echo $lang['check_in']; ?></p>
             </a>
@@ -293,7 +321,7 @@ try {
           <?php endif; ?>
           <?php if($is_admin || in_array('bookings', $perms)): ?>
           <li class="nav-item">
-            <a href="reserve.php" target="frame" class="nav-link">
+            <a href="services/reserve.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-calendar-alt"></i>
               <p><?php echo $lang['bookings']; ?></p>
             </a>
@@ -301,7 +329,7 @@ try {
           <?php endif; ?>
           <?php if($is_admin || in_array('checkout', $perms)): ?>
           <li class="nav-item">
-            <a href="checkout.php" target="frame" class="nav-link">
+            <a href="services/checkout.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-receipt"></i>
               <p><?php echo $lang['check_out']; ?></p>
             </a>
@@ -309,7 +337,7 @@ try {
           <?php endif; ?>
           <?php if($is_admin || in_array('room_service', $perms)): ?>
           <li class="nav-item">
-            <a href="room_service.php" target="frame" class="nav-link">
+            <a href="services/room_service.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-bell"></i>
               <p><?php echo $lang['room_service']; ?></p>
             </a>
@@ -321,7 +349,7 @@ try {
           <li class="nav-header text-uppercase" style="color: rgba(255,255,255,0.5); font-size: 0.7rem; letter-spacing: 1.5px; padding-top: 20px;"><?php echo $lang['stock_and_sales']; ?></li>
           <?php if($is_admin || in_array('pos', $perms)): ?>
           <li class="nav-item">
-            <a href="pos.php" target="frame" class="nav-link">
+            <a href="products/pos.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-cash-register"></i>
               <p><?php echo $lang['pos']; ?></p>
             </a>
@@ -329,7 +357,7 @@ try {
           <?php endif; ?>
           <?php if($is_admin || in_array('stock', $perms)): ?>
           <li class="nav-item">
-            <a href="stock.php" target="frame" class="nav-link">
+            <a href="products/stock.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-boxes"></i>
               <p><?php echo $lang['stock']; ?></p>
             </a>
@@ -344,13 +372,13 @@ try {
             </a>
             <ul class="nav nav-treeview">
               <li class="nav-item">
-                <a href="form_product_categories.php" target="frame" class="nav-link">
+                <a href="products/form_product_categories.php" target="frame" class="nav-link">
                   <i class="fas fa-th-list nav-icon"></i>
                   <p><?php echo $lang['product_categories']; ?></p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="form_product_units.php" target="frame" class="nav-link">
+                <a href="products/form_product_units.php" target="frame" class="nav-link">
                   <i class="fas fa-balance-scale nav-icon"></i>
                   <p><?php echo $lang['product_units']; ?></p>
                 </a>
@@ -364,26 +392,26 @@ try {
           <li class="nav-header text-uppercase" style="color: rgba(255,255,255,0.5); font-size: 0.7rem; letter-spacing: 1.5px; padding-top: 20px;"><?php echo $lang['management_and_reports']; ?></li>
           <?php if($is_admin || in_array('report', $perms)): ?>
           <li class="nav-item">
-            <a href="report.php" target="frame" class="nav-link">
+            <a href="reports/report.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-chart-bar"></i>
               <p><?php echo $lang['financial_report']; ?></p>
             </a>
           </li>
 
           <li class="nav-item">
-            <a href="report_pos_history.php" target="frame" class="nav-link">
+            <a href="reports/report_pos_history.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-shopping-cart"></i>
               <p><?php echo $lang['pos_history'] ?? 'ປະຫວັດການຂາຍ POS'; ?></p>
             </a>
           </li>
           <li class="nav-item">
-            <a href="report_checkin_checkout.php" target="frame" class="nav-link">
+            <a href="reports/report_checkin_checkout.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-exchange-alt"></i>
               <p><?php echo $lang['checkin_checkout_report']; ?></p>
             </a>
           </li>
           <li class="nav-item">
-            <a href="expenses.php" target="frame" class="nav-link">
+            <a href="reports/expenses.php" target="frame" class="nav-link">
               <i class="nav-icon fas fa-file-invoice-dollar"></i>
               <p><?php echo $lang['expenses_management']; ?></p>
             </a>
@@ -451,6 +479,12 @@ try {
                 <a href="users/manage_users.php" target="frame" class="nav-link">
                   <i class="fas fa-users-cog nav-icon"></i>
                   <p><?php echo $lang['users']; ?></p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="users/manage_permissions.php" target="frame" class="nav-link">
+                  <i class="fas fa-user-shield nav-icon"></i>
+                  <p>ກຳນົດສິດການໃຊ້ງານ</p>
                 </a>
               </li>
               <?php endif; ?>

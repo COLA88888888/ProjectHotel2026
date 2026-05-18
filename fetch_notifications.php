@@ -30,7 +30,7 @@ while ($row = $stmtLow->fetch()) {
         'text' => $row['prod_name'] . ' ເຫຼືອພຽງ ' . $row['qty'],
         'icon' => 'fas fa-box-open',
         'color' => 'text-warning',
-        'link' => 'stock.php'
+        'link' => 'products/stock.php'
     ];
     $total_count++;
 }
@@ -58,7 +58,7 @@ while ($row = $stmtService->fetch()) {
         'text' => $row['grouped_items'] . ' (' . date('H:i', strtotime($row['created_at'])) . ')',
         'icon' => 'fas fa-utensils',
         'color' => 'text-info',
-        'link' => 'room_service.php'
+        'link' => 'services/room_service.php'
     ];
     $total_count++;
 }
@@ -72,7 +72,7 @@ while ($row = $stmtCheckout->fetch()) {
         'text' => 'ຫ້ອງ ' . $row['room_number'] . ' ຮອດກຳນົດອອກມື້ນີ້',
         'icon' => 'fas fa-door-closed',
         'color' => 'text-danger',
-        'link' => 'checkout.php'
+        'link' => 'services/checkout.php'
     ];
     $total_count++;
 }
@@ -86,7 +86,7 @@ while ($row = $stmtPay->fetch()) {
         'text' => ($lang['room'] ?? 'ຫ້ອງ') . ' ' . $row['room_number'] . ': ' . formatCurrency($row['amount']),
         'icon' => 'fas fa-hand-holding-usd',
         'color' => 'text-success',
-        'link' => 'report.php', 
+        'link' => 'reports/report.php', 
         'time' => $row['created_at']
     ];
     $total_count++;

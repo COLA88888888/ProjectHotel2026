@@ -1,5 +1,11 @@
 <?php
-session_start();
+require_once '../config/session_check.php';
+$is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
+if (!$is_admin && !hasPermission('rooms_edit')) {
+    $_SESSION['error'] = "ທ່ານບໍ່ມີສິດໃນການແກ້ໄຂຂໍ້ມູນຫ້ອງ!";
+    header("Location: select_rooms.php");
+    exit();
+}
 require_once '../config/db.php';
 require_once '../config/logger.php';
 
@@ -84,6 +90,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update'])) {
                 </div>
                 <form action="" method="post" id="editRoomForm">
                     <div class="card-body">
+                        <div class="form-group">
+                            <label><?php echo $lang['room_code'] ?? 'ລະຫັດຫ້ອງ'; ?></label>
+                            <input type="text" class="form-control" value="#<?php echo htmlspecialchars($room['id']); ?>" readonly style="background-color: #e9ecef; font-weight: 700; color: #495057;">
+                        </div>
                         <div class="form-group">
                             <label><?php echo $lang['room_number_label']; ?></label>
                             <input type="text" name="room_number" id="room_number" class="form-control" value="<?php echo htmlspecialchars($room['room_number']); ?>">

@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once '../config/session_check.php';
+enforcePermission('settings');
 require_once '../config/db.php';
 require_once '../config/logger.php';
 
@@ -12,8 +13,17 @@ if (file_exists($lang_file)) {
     include "../lang/la.php";
 }
 
+$is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
+$can_edit = ($is_admin || hasPermission('settings_edit'));
+$can_delete = ($is_admin || hasPermission('settings_delete'));
+
 // Add new currency
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_currency'])) {
+    if (!$can_edit) {
+        $_SESSION['error'] = "ທ່ານບໍ່ມີສິດໃນການເພີ່ມສະກຸນເງິນ!";
+        header("Location: form_currency.php");
+        exit();
+    }
     $code = trim($_POST['currency_code']);
     $name_la = trim($_POST['currency_name_la']);
     $name_en = trim($_POST['currency_name_en']);
@@ -42,6 +52,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_currency'])) {
 
 // Edit currency
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_currency'])) {
+    if (!$can_edit) {
+        $_SESSION['error'] = "ທ່ານບໍ່ມີສິດໃນການແກ້ໄຂສະກຸນເງິນ!";
+        header("Location: form_currency.php");
+        exit();
+    }
     $id = (int)$_POST['id'];
     $code = trim($_POST['currency_code']);
     $name_la = trim($_POST['currency_name_la']);
@@ -65,6 +80,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_currency'])) {
 
 // Delete currency
 if (isset($_GET['delete'])) {
+    if (!$can_delete) {
+        $_SESSION['error'] = "ທ່ານບໍ່ມີສິດໃນການລຶບສະກຸນເງິນ!";
+        header("Location: form_currency.php");
+        exit();
+    }
     $id = (int)$_GET['delete'];
     
     // Prevent deleting default currency (LAK)
@@ -89,6 +109,11 @@ if (isset($_GET['delete'])) {
 
 // Set as Default Currency
 if (isset($_GET['set_default'])) {
+    if (!$can_edit) {
+        $_SESSION['error'] = "ທ່ານບໍ່ມີສິດໃນການຕັ້ງສະກຸນເງິນຫຼັກ!";
+        header("Location: form_currency.php");
+        exit();
+    }
     $id = (int)$_GET['set_default'];
     
     // Begin transaction
@@ -207,6 +232,7 @@ $symbol_col = "symbol_" . $current_lang;
 
     <div class="row">
         <!-- Add Form -->
+        <?php if ($can_edit): ?>
         <div class="col-md-4">
             <div class="card card-primary card-outline">
                 <div class="card-header">
@@ -232,33 +258,6 @@ $symbol_col = "symbol_" . $current_lang;
                                 <input type="text" name="symbol_la" class="form-control" placeholder="₭, $...">
                             </div>
                         </div>
-
-                        <!-- <button class="btn btn-link btn-sm p-0 mb-3 text-decoration-none" type="button" data-toggle="collapse" data-target="#moreOptions">
-                            <i class="fas fa-plus-circle mr-1"></i> <?php echo $lang['advanced_options'] ?? 'ຕົວເລືອກເພີ່ມເຕີມ'; ?> (Advanced)
-                        </button>
-
-                        <div class="collapse" id="moreOptions">
-                            <div class="card card-body bg-light border-0 p-3 mb-0">
-                                <div class="row">
-                                    <div class="col-md-6 form-group">
-                                        <label class="small font-weight-bold"><?php echo $lang['currency_name_en']; ?></label>
-                                        <input type="text" name="currency_name_en" class="form-control form-control-sm">
-                                    </div>
-                                    <div class="col-md-6 form-group">
-                                        <label class="small font-weight-bold"><?php echo $lang['currency_name_cn']; ?></label>
-                                        <input type="text" name="currency_name_cn" class="form-control form-control-sm">
-                                    </div>
-                                    <div class="col-md-6 form-group mb-0">
-                                        <label class="small font-weight-bold"><?php echo $lang['symbol_en']; ?></label>
-                                        <input type="text" name="symbol_en" class="form-control form-control-sm">
-                                    </div>
-                                    <div class="col-md-6 form-group mb-0">
-                                        <label class="small font-weight-bold"><?php echo $lang['symbol_cn']; ?></label>
-                                        <input type="text" name="symbol_cn" class="form-control form-control-sm">
-                                    </div>
-                                </div>
-                            </div>
-                        </div> -->
                     </div>
                     <div class="card-footer">
                         <button type="submit" name="add_currency" class="btn btn-primary btn-block"><i class="fas fa-save"></i> <?php echo $lang['save']; ?></button>
@@ -266,9 +265,10 @@ $symbol_col = "symbol_" . $current_lang;
                 </form>
             </div>
         </div>
+        <?php endif; ?>
 
         <!-- Data Table -->
-        <div class="col-md-8">
+        <div class="<?php echo $can_edit ? 'col-md-8' : 'col-md-12'; ?>">
             <div class="card card-success card-outline">
                 <div class="card-header">
                     <h3 class="card-title font-weight-bold"><?php echo $lang['currency_list']; ?></h3>
@@ -308,26 +308,35 @@ $symbol_col = "symbol_" . $current_lang;
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm">
-                                                <?php if(!$c['is_default']): ?>
-                                                    <a href="?set_default=<?php echo $c['id']; ?>" class="btn btn-success btn-action" title="<?php echo $lang['set_as_main_currency'] ?? 'ຕັ້ງເປັນເງິນຫຼັກ'; ?>">
-                                                        <i class="fas fa-check-circle"></i>
-                                                    </a>
+                                                <?php if ($can_edit): ?>
+                                                    <?php if(!$c['is_default']): ?>
+                                                        <a href="?set_default=<?php echo $c['id']; ?>" class="btn btn-success btn-action" title="<?php echo $lang['set_as_main_currency'] ?? 'ຕັ້ງເປັນເງິນຫຼັກ'; ?>">
+                                                            <i class="fas fa-check-circle"></i>
+                                                        </a>
+                                                    <?php endif; ?>
+                                                    <button class="btn btn-warning text-white btn-action btn-edit" 
+                                                        data-id="<?php echo $c['id']; ?>"
+                                                        data-code="<?php echo htmlspecialchars($c['currency_code']); ?>"
+                                                        data-name-la="<?php echo htmlspecialchars($c['currency_name_la'] ?: $c['currency_name']); ?>"
+                                                        data-name-en="<?php echo htmlspecialchars($c['currency_name_en'] ?? ''); ?>"
+                                                        data-name-cn="<?php echo htmlspecialchars($c['currency_name_cn'] ?? ''); ?>"
+                                                        data-rate="<?php echo number_format($c['exchange_rate']); ?>"
+                                                        data-symbol-la="<?php echo htmlspecialchars($c['symbol_la'] ?: $c['symbol']); ?>"
+                                                        data-symbol-en="<?php echo htmlspecialchars($c['symbol_en'] ?? ''); ?>"
+                                                        data-symbol-cn="<?php echo htmlspecialchars($c['symbol_cn'] ?? ''); ?>"
+                                                        data-default="<?php echo $c['is_default']; ?>">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
                                                 <?php endif; ?>
-                                                <button class="btn btn-warning text-white btn-action btn-edit" 
-                                                    data-id="<?php echo $c['id']; ?>"
-                                                    data-code="<?php echo htmlspecialchars($c['currency_code']); ?>"
-                                                    data-name-la="<?php echo htmlspecialchars($c['currency_name_la'] ?: $c['currency_name']); ?>"
-                                                    data-name-en="<?php echo htmlspecialchars($c['currency_name_en'] ?? ''); ?>"
-                                                    data-name-cn="<?php echo htmlspecialchars($c['currency_name_cn'] ?? ''); ?>"
-                                                    data-rate="<?php echo number_format($c['exchange_rate']); ?>"
-                                                    data-symbol-la="<?php echo htmlspecialchars($c['symbol_la'] ?: $c['symbol']); ?>"
-                                                    data-symbol-en="<?php echo htmlspecialchars($c['symbol_en'] ?? ''); ?>"
-                                                    data-symbol-cn="<?php echo htmlspecialchars($c['symbol_cn'] ?? ''); ?>"
-                                                    data-default="<?php echo $c['is_default']; ?>">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <?php if(!$c['is_default']): ?>
+                                                <?php if ($can_delete && !$c['is_default']): ?>
                                                     <button class="btn btn-danger btn-action btn-delete" data-id="<?php echo $c['id']; ?>"><i class="fas fa-trash-alt"></i></button>
+                                                <?php endif; ?>
+                                                <?php if (!$can_edit && (!$can_delete || $c['is_default'])): ?>
+                                                    <?php if($c['is_default']): ?>
+                                                        <span class="text-success small font-weight-bold"><i class="fas fa-check-circle mr-1"></i> <?php echo $lang['main_currency'] ?? 'ເງິນຫຼັກ'; ?></span>
+                                                    <?php else: ?>
+                                                        <span class="text-muted small">ເບິ່ງຢ່າງດຽວ</span>
+                                                    <?php endif; ?>
                                                 <?php endif; ?>
                                             </div>
                                         </td>

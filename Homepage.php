@@ -79,15 +79,48 @@ try {
     // Revenue calculations (Room + POS)
     // Updated to include 'Occupied', 'Completed', and 'Checked In' to ensure Walk-in revenue shows up immediately
     $room_revenue = $pdo->query("SELECT SUM((total_price + COALESCE(food_charge, 0)) * $tax_mult) FROM bookings WHERE status IN ('Completed', 'Checked In', 'Occupied')")->fetchColumn() ?: 0;
-    $pos_revenue = $pdo->query("SELECT SUM(amount) FROM orders")->fetchColumn() ?: 0;
-    $total_revenue = $room_revenue + $pos_revenue;
-
-    // Use current date from PHP to ensure sync with MySQL
+    $pos_revenue = $pdo->query("SELECT SUM(amount) FROM orders")->fetchColumn() ?: 0;    // Use current date from PHP to ensure sync with MySQL
     $current_date = date('Y-m-d');
     
-    $stmtTR = $pdo->prepare("SELECT SUM((total_price + COALESCE(food_charge, 0)) * $tax_mult) FROM bookings WHERE status IN ('Completed', 'Checked In', 'Occupied') AND (DATE(check_in_date) = ? OR DATE(created_at) = ?)");
-    $stmtTR->execute([$current_date, $current_date]);
-    $today_room = $stmtTR->fetchColumn() ?: 0;
+    // 2. Today's Revenue Breakdown (Cash vs Transfer)
+    // Bookings - Deposits received today
+    $stmtCashRoomDep = $pdo->prepare("SELECT SUM(deposit_amount) FROM bookings WHERE status IN ('Completed', 'Checked In', 'Occupied', 'Booked') AND (DATE(check_in_date) = ? OR DATE(created_at) = ?) AND (payment_method LIKE '%ເງິນສົດ%' OR payment_method LIKE '%Cash%')");
+    $stmtCashRoomDep->execute([$current_date, $current_date]);
+    $cash_dep = $stmtCashRoomDep->fetchColumn() ?: 0;
+
+    // Bookings - Checkout balances received today
+    $stmtCashRoomOut = $pdo->prepare("SELECT SUM(GREATEST(0, (total_price + COALESCE(food_charge, 0)) * $tax_mult - deposit_amount)) FROM bookings WHERE status = 'Completed' AND DATE(check_out_date) = ? AND (payment_method LIKE '%ເງິນສົດ%' OR payment_method LIKE '%Cash%')");
+    $stmtCashRoomOut->execute([$current_date]);
+    $cash_out = $stmtCashRoomOut->fetchColumn() ?: 0;
+
+    $today_cash_room = $cash_dep + $cash_out;
+
+    // Bookings - Transfer deposits received today
+    $stmtTransferRoomDep = $pdo->prepare("SELECT SUM(deposit_amount) FROM bookings WHERE status IN ('Completed', 'Checked In', 'Occupied', 'Booked') AND (DATE(check_in_date) = ? OR DATE(created_at) = ?) AND (payment_method LIKE '%ເງິນໂອນ%' OR payment_method LIKE '%Transfer%')");
+    $stmtTransferRoomDep->execute([$current_date, $current_date]);
+    $transfer_dep = $stmtTransferRoomDep->fetchColumn() ?: 0;
+
+    // Bookings - Transfer checkout balances received today
+    $stmtTransferRoomOut = $pdo->prepare("SELECT SUM(GREATEST(0, (total_price + COALESCE(food_charge, 0)) * $tax_mult - deposit_amount)) FROM bookings WHERE status = 'Completed' AND DATE(check_out_date) = ? AND (payment_method LIKE '%ເງິນໂອນ%' OR payment_method LIKE '%Transfer%')");
+    $stmtTransferRoomOut->execute([$current_date]);
+    $transfer_out = $stmtTransferRoomOut->fetchColumn() ?: 0;
+
+    $today_transfer_room = $transfer_dep + $transfer_out;
+
+    // POS Orders
+    $stmtCashPos = $pdo->prepare("SELECT SUM(amount) FROM orders WHERE DATE(o_date) = ? AND (payment_method LIKE '%ເງິນສົດ%' OR payment_method LIKE '%Cash%')");
+    $stmtCashPos->execute([$current_date]);
+    $today_cash_pos = $stmtCashPos->fetchColumn() ?: 0;
+
+    $stmtTransferPos = $pdo->prepare("SELECT SUM(amount) FROM orders WHERE DATE(o_date) = ? AND (payment_method LIKE '%ເງິນໂອນ%' OR payment_method LIKE '%Transfer%')");
+    $stmtTransferPos->execute([$current_date]);
+    $today_transfer_pos = $stmtTransferPos->fetchColumn() ?: 0;
+
+    $today_cash_total = $today_cash_room + $today_cash_pos;
+    $today_transfer_total = $today_transfer_room + $today_transfer_pos;
+
+    // Room Revenue Received Today = Today Cash Room + Today Transfer Room
+    $today_room = $today_cash_room + $today_transfer_room;
 
     $stmtTP = $pdo->prepare("SELECT SUM(amount) FROM orders WHERE DATE(o_date) = ?");
     $stmtTP->execute([$current_date]);
@@ -113,32 +146,18 @@ try {
     $stmtBookToday->execute([$current_date]);
     $today_bookings = $stmtBookToday->fetchColumn() ?: 0;
 
-    // 2. Today's Revenue Breakdown (Cash vs Transfer)
-    // Bookings
-    $stmtCashRoom = $pdo->prepare("SELECT SUM(CASE WHEN status = 'Booked' THEN deposit_amount ELSE (total_price + COALESCE(food_charge, 0)) * $tax_mult END) FROM bookings WHERE status IN ('Completed', 'Checked In', 'Occupied', 'Booked') AND (DATE(check_in_date) = ? OR DATE(created_at) = ?) AND (payment_method LIKE '%ເງິນສົດ%' OR payment_method LIKE '%Cash%')");
-    $stmtCashRoom->execute([$current_date, $current_date]);
-    $today_cash_room = $stmtCashRoom->fetchColumn() ?: 0;
-
-    $stmtTransferRoom = $pdo->prepare("SELECT SUM(CASE WHEN status = 'Booked' THEN deposit_amount ELSE (total_price + COALESCE(food_charge, 0)) * $tax_mult END) FROM bookings WHERE status IN ('Completed', 'Checked In', 'Occupied', 'Booked') AND (DATE(check_in_date) = ? OR DATE(created_at) = ?) AND (payment_method LIKE '%ເງິນໂອນ%' OR payment_method LIKE '%Transfer%')");
-    $stmtTransferRoom->execute([$current_date, $current_date]);
-    $today_transfer_room = $stmtTransferRoom->fetchColumn() ?: 0;
-
-    // POS Orders
-    $stmtCashPos = $pdo->prepare("SELECT SUM(amount) FROM orders WHERE DATE(o_date) = ? AND (payment_method LIKE '%ເງິນສົດ%' OR payment_method LIKE '%Cash%')");
-    $stmtCashPos->execute([$current_date]);
-    $today_cash_pos = $stmtCashPos->fetchColumn() ?: 0;
-
-    $stmtTransferPos = $pdo->prepare("SELECT SUM(amount) FROM orders WHERE DATE(o_date) = ? AND (payment_method LIKE '%ເງິນໂອນ%' OR payment_method LIKE '%Transfer%')");
-    $stmtTransferPos->execute([$current_date]);
-    $today_transfer_pos = $stmtTransferPos->fetchColumn() ?: 0;
-
-    $today_cash_total = $today_cash_room + $today_cash_pos;
-    $today_transfer_total = $today_transfer_room + $today_transfer_pos;
-
     // 3. Monthly Revenue (Bookings + POS)
-    $stmtMonthRoom = $pdo->prepare("SELECT SUM(CASE WHEN status = 'Booked' THEN deposit_amount ELSE (total_price + COALESCE(food_charge, 0)) * $tax_mult END) FROM bookings WHERE status IN ('Completed', 'Checked In', 'Occupied', 'Booked') AND MONTH(check_in_date) = MONTH(CURDATE()) AND YEAR(check_in_date) = YEAR(CURDATE())");
-    $stmtMonthRoom->execute();
-    $monthly_revenue_room = $stmtMonthRoom->fetchColumn() ?: 0;
+    // Monthly deposits received
+    $stmtMonthRoomDep = $pdo->prepare("SELECT SUM(deposit_amount) FROM bookings WHERE status IN ('Completed', 'Checked In', 'Occupied', 'Booked') AND MONTH(check_in_date) = MONTH(CURDATE()) AND YEAR(check_in_date) = YEAR(CURDATE())");
+    $stmtMonthRoomDep->execute();
+    $month_dep = $stmtMonthRoomDep->fetchColumn() ?: 0;
+
+    // Monthly checkout balances received
+    $stmtMonthRoomOut = $pdo->prepare("SELECT SUM(GREATEST(0, (total_price + COALESCE(food_charge, 0)) * $tax_mult - deposit_amount)) FROM bookings WHERE status = 'Completed' AND MONTH(check_out_date) = MONTH(CURDATE()) AND YEAR(check_out_date) = YEAR(CURDATE())");
+    $stmtMonthRoomOut->execute();
+    $month_out = $stmtMonthRoomOut->fetchColumn() ?: 0;
+
+    $monthly_revenue_room = $month_dep + $month_out;
 
     $stmtMonthPos = $pdo->prepare("SELECT SUM(amount) FROM orders WHERE MONTH(o_date) = MONTH(CURDATE()) AND YEAR(o_date) = YEAR(CURDATE())");
     $stmtMonthPos->execute();
@@ -156,10 +175,16 @@ try {
         $date_label = date('d/m', strtotime("-$i days"));
         $days[] = $date_label;
 
-        // Room Revenue - Including Occupied for real-time chart tracking
-        $stmtR = $pdo->prepare("SELECT SUM(total_price + COALESCE(food_charge, 0)) as total FROM bookings WHERE status IN ('Completed', 'Checked In', 'Occupied') AND DATE(check_in_date) = ?");
-        $stmtR->execute([$date]);
-        $room_revenue_7d[] = $stmtR->fetch()['total'] ?? 0;
+        // Room Revenue - Accurate payment-based cash flow model including tax
+        $stmtRDep = $pdo->prepare("SELECT SUM(deposit_amount) as total FROM bookings WHERE status IN ('Completed', 'Checked In', 'Occupied', 'Booked') AND DATE(check_in_date) = ?");
+        $stmtRDep->execute([$date]);
+        $r_dep = (float)($stmtRDep->fetch()['total'] ?? 0);
+
+        $stmtROut = $pdo->prepare("SELECT SUM(GREATEST(0, (total_price + COALESCE(food_charge, 0)) * $tax_mult - deposit_amount)) as total FROM bookings WHERE status = 'Completed' AND DATE(check_out_date) = ?");
+        $stmtROut->execute([$date]);
+        $r_out = (float)($stmtROut->fetch()['total'] ?? 0);
+
+        $room_revenue_7d[] = $r_dep + $r_out;
 
         // POS Revenue
         $stmtP = $pdo->prepare("SELECT SUM(amount) as total FROM orders WHERE DATE(o_date) = ?");
@@ -295,7 +320,7 @@ try {
         </a>
 
         <!-- Card 2: Today's Bookings -->
-        <a href="reserve.php?today=1" class="stat-card gc-amber">
+        <a href="services/reserve.php?today=1" class="stat-card gc-amber">
           <div class="stat-card-top">
             <div>
               <div class="stat-card-label"><?php echo $lang['today_bookings_label']; ?></div>
@@ -309,7 +334,7 @@ try {
         </a>
 
         <!-- Card 3: Today's Cash -->
-        <div class="stat-card gc-blue">
+        <a href="reports/report.php?start_date=<?php echo $current_date; ?>&end_date=<?php echo $current_date; ?>" class="stat-card gc-blue">
           <div class="stat-card-top">
             <div>
               <div class="stat-card-label"><?php echo $lang['today_cash_label']; ?></div>
@@ -318,12 +343,12 @@ try {
             <div class="stat-card-icon"><i class="fas fa-money-bill-wave"></i></div>
           </div>
           <div class="stat-card-footer">
-            <i class="fas fa-coins"></i> <?php echo $lang['total_cash_label']; ?>
+            <i class="fas fa-arrow-right"></i> <?php echo $lang['total_cash_label']; ?>
           </div>
-        </div>
+        </a>
 
         <!-- Card 4: Today's Transfer -->
-        <div class="stat-card gc-indigo">
+        <a href="reports/report.php?start_date=<?php echo $current_date; ?>&end_date=<?php echo $current_date; ?>" class="stat-card gc-indigo">
           <div class="stat-card-top">
             <div>
               <div class="stat-card-label"><?php echo $lang['today_transfer_label']; ?></div>
@@ -332,12 +357,12 @@ try {
             <div class="stat-card-icon"><i class="fas fa-university"></i></div>
           </div>
           <div class="stat-card-footer">
-            <i class="fas fa-exchange-alt"></i> <?php echo $lang['total_transfer_label']; ?>
+            <i class="fas fa-arrow-right"></i> <?php echo $lang['total_transfer_label']; ?>
           </div>
-        </div>
+        </a>
 
         <!-- Card 5: Today Total Revenue -->
-        <a href="report.php?type=room_revenue" class="stat-card gc-teal">
+        <a href="reports/report.php?start_date=<?php echo $current_date; ?>&end_date=<?php echo $current_date; ?>" class="stat-card gc-teal">
           <div class="stat-card-top">
             <div>
               <div class="stat-card-label"><?php echo $lang['today_revenue_label']; ?></div>
@@ -351,7 +376,7 @@ try {
         </a>
 
         <!-- Card 6: Monthly Revenue -->
-        <a href="report.php?type=finance" class="stat-card gc-dark">
+        <a href="reports/report.php?start_date=<?php echo date('Y-m-01'); ?>&end_date=<?php echo date('Y-m-d'); ?>" class="stat-card gc-dark">
           <div class="stat-card-top">
             <div>
               <div class="stat-card-label"><?php echo $lang['monthly_revenue_label']; ?></div>
@@ -374,12 +399,16 @@ try {
             <div class="card shadow-sm border-0" style="border-radius: 12px;">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
                     <h5 class="m-0 font-weight-bold text-dark" style="font-size: 0.95rem;"><i class="fas fa-chart-line mr-2 text-primary"></i> <?php echo $lang['revenue_chart']; ?></h5>
-                    <select id="chartPeriod" class="form-control form-control-sm" style="width: auto; border-radius: 8px; font-weight: 600; border: 2px solid #3498DB; color: #3498DB;">
-                        <option value="daily"><?php echo $lang['daily']; ?></option>
-                        <option value="weekly"><?php echo $lang['weekly']; ?></option>
-                        <option value="monthly"><?php echo $lang['monthly']; ?></option>
-                        <option value="yearly"><?php echo $lang['yearly']; ?></option>
-                    </select>
+                    <div class="d-flex align-items-center">
+                        <button id="btnChartPrev" class="btn btn-sm btn-outline-secondary mr-2" title="<?php echo $lang['previous'] ?? 'ຍ້ອນຫຼັງ'; ?>"><i class="fas fa-chevron-left"></i></button>
+                        <select id="chartPeriod" class="form-control form-control-sm mr-2" style="width: auto; border-radius: 8px; font-weight: 600; border: 2px solid #3498DB; color: #3498DB;">
+                            <option value="daily"><?php echo $lang['daily']; ?></option>
+                            <option value="weekly"><?php echo $lang['weekly']; ?></option>
+                            <option value="monthly"><?php echo $lang['monthly']; ?></option>
+                            <option value="yearly"><?php echo $lang['yearly']; ?></option>
+                        </select>
+                        <button id="btnChartNext" class="btn btn-sm btn-outline-secondary" title="<?php echo $lang['next'] ?? 'ຖັດໄປ'; ?>" disabled><i class="fas fa-chevron-right"></i></button>
+                    </div>
                 </div>
                 <div class="card-body p-2 p-md-3">
                     <canvas id="lineChart" style="min-height: 200px; height: 280px; max-height: 300px; max-width: 100%;"></canvas>
@@ -443,9 +472,10 @@ try {
         
         var lineChart = null;
         var donutChart = null;
+        var currentChartOffset = 0;
 
-        function loadChartData(period) {
-          $.getJSON('chart_data.php', { period: period }, function(data) {
+        function loadChartData(period, offset) {
+          $.getJSON('reports/chart_data.php', { period: period, offset: offset }, function(data) {
             var roomTotal = data.roomData.reduce(function(a,b){ return a+b; }, 0);
             var posTotal = data.posData.reduce(function(a,b){ return a+b; }, 0);
 
@@ -567,11 +597,29 @@ try {
         }
 
         // Initial load
-        loadChartData('daily');
+        loadChartData('daily', currentChartOffset);
 
         // Period change
         $('#chartPeriod').on('change', function() {
-          loadChartData($(this).val());
+          currentChartOffset = 0;
+          $('#btnChartNext').prop('disabled', true);
+          loadChartData($(this).val(), currentChartOffset);
+        });
+
+        $('#btnChartPrev').on('click', function() {
+          currentChartOffset++;
+          $('#btnChartNext').prop('disabled', false);
+          loadChartData($('#chartPeriod').val(), currentChartOffset);
+        });
+
+        $('#btnChartNext').on('click', function() {
+          if (currentChartOffset > 0) {
+            currentChartOffset--;
+            if (currentChartOffset === 0) {
+              $(this).prop('disabled', true);
+            }
+            loadChartData($('#chartPeriod').val(), currentChartOffset);
+          }
         });
       })
     </script>

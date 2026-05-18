@@ -29,9 +29,12 @@ try {
     $stmtName = $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'hotel_name'");
     $hotel_name = $stmtName->fetchColumn() ?? 'ລະບົບໂຮງແຮມ';
     
-    $hotel_logo = !empty($logo_val) ? 'assets/img/logo/' . $logo_val : 'assets/img/logo/logo.png';
+    $hotel_logo = !empty($logo_val) ? 'assets/img/logo/' . $logo_val : 'assets/img/image.jpg';
+    if (!file_exists($hotel_logo)) {
+        $hotel_logo = 'assets/img/image.jpg';
+    }
 } catch (Exception $e) { 
-    $hotel_logo = 'assets/img/logo/logo.png';
+    $hotel_logo = 'assets/img/image.jpg';
     $hotel_name = 'ລະບົບໂຮງແຮມ';
 }
 ?>

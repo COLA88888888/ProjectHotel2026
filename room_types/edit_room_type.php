@@ -1,5 +1,11 @@
 <?php
-session_start();
+require_once '../config/session_check.php';
+$is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
+if (!$is_admin && !hasPermission('rooms_edit')) {
+    $_SESSION['error'] = "ທ່ານບໍ່ມີສິດໃນການແກ້ໄຂປະເພດຫ້ອງ!";
+    header("Location: form_room_types.php");
+    exit();
+}
 require_once '../config/db.php';
 require_once '../config/logger.php';
 

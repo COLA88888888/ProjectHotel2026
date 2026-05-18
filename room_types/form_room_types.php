@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once '../config/session_check.php';
+enforcePermission('rooms');
 require_once '../config/db.php';
 require_once '../config/logger.php';
 
@@ -12,8 +13,17 @@ if (file_exists($lang_file)) {
     include "../lang/la.php";
 }
 
+$is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
+$can_edit = ($is_admin || hasPermission('rooms_edit'));
+$can_delete = ($is_admin || hasPermission('rooms_delete'));
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save'])) {
+    if (!$can_edit) {
+        $_SESSION['error'] = "ທ່ານບໍ່ມີສິດໃນການເພີ່ມປະເພດຫ້ອງ!";
+        header("Location: form_room_types.php");
+        exit();
+    }
     $room_type_name_la = $_POST['room_type_name_la'] ?? '';
     $room_type_name_en = $_POST['room_type_name_en'] ?? '';
     $room_type_name_cn = $_POST['room_type_name_cn'] ?? '';
@@ -39,6 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save'])) {
 
 // Handle delete
 if (isset($_GET['delete'])) {
+    if (!$can_delete) {
+        $_SESSION['error'] = "ທ່ານບໍ່ມີສິດໃນການລຶບປະເພດຫ້ອງ!";
+        header("Location: form_room_types.php");
+        exit();
+    }
     $id = $_GET['delete'];
     
     // First, check if this room type is being used by any rooms
@@ -91,9 +106,20 @@ $desc_col = "description_" . $current_lang;
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="../sweetalert/dist/sweetalert2.min.css">
     <style>
-        body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 20px; }
-        .btn-warning { background: transparent !important; border: none !important; color: #ffc107 !important; font-size: 1.15rem; padding: 0 8px; box-shadow: none !important; }
-        .btn-danger { background: transparent !important; border: none !important; color: #dc3545 !important; font-size: 1.15rem; padding: 0 8px; box-shadow: none !important; }
+        body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 20px; font-size: 0.9rem; }
+        
+        /* Table compact styles */
+        .table { font-size: 0.82rem !important; }
+        .table thead th { font-size: 0.78rem !important; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 8px !important; }
+        .table tbody td { padding: 8px 8px !important; vertical-align: middle !important; }
+        
+        /* Prevent unnecessary scrollbar on desktop */
+        @media (min-width: 768px) {
+            .table-responsive { overflow-x: hidden !important; }
+        }
+        
+        .btn-warning { background: transparent !important; border: none !important; color: #ffc107 !important; font-size: 1rem !important; padding: 0 6px !important; box-shadow: none !important; }
+        .btn-danger { background: transparent !important; border: none !important; color: #dc3545 !important; font-size: 1rem !important; padding: 0 6px !important; box-shadow: none !important; }
         .btn-warning:hover, .btn-danger:hover { opacity: 0.7; }
     </style>
 </head>
@@ -129,6 +155,7 @@ $desc_col = "description_" . $current_lang;
 
     <div class="row">
         <!-- Form Section -->
+        <?php if ($can_edit): ?>
         <div class="col-md-4">
             <div class="card card-primary card-outline shadow-sm">
                 <div class="card-header">
@@ -158,9 +185,10 @@ $desc_col = "description_" . $current_lang;
                 </form>
             </div>
         </div>
+        <?php endif; ?>
 
         <!-- Table Section -->
-        <div class="col-md-8">
+        <div class="<?php echo $can_edit ? 'col-md-8' : 'col-md-12'; ?>">
             <div class="card card-outline card-info shadow-sm">
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-list"></i> <?php echo $lang['room_type_list']; ?></h3>
@@ -187,8 +215,15 @@ $desc_col = "description_" . $current_lang;
                                             <td class="text-left text-muted small"><?php echo htmlspecialchars($row[$desc_col] ?: $row['description']); ?></td>
                                             <td class="text-center">
                                                 <div class="btn-group">
+                                                    <?php if ($can_edit): ?>
                                                     <a href="edit_room_type.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-warning" title="<?php echo $lang['edit']; ?>"><i class="fas fa-edit"></i></a>
+                                                    <?php endif; ?>
+                                                    <?php if ($can_delete): ?>
                                                     <a href="#" class="btn btn-sm btn-danger btn-delete" data-id="<?php echo $row['id']; ?>" title="<?php echo $lang['delete']; ?>"><i class="fas fa-trash-alt"></i></a>
+                                                    <?php endif; ?>
+                                                    <?php if (!$can_edit && !$can_delete): ?>
+                                                    <span class="text-muted small">ເບິ່ງຢ່າງດຽວ</span>
+                                                    <?php endif; ?>
                                                 </div>
                                             </td>
                                         </tr>

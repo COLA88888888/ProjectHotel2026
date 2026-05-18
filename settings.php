@@ -1,6 +1,8 @@
 <?php
-// --- ສ່ວນເລີ່ມຕົ້ນ Session ແລະ ດຶງໄຟລ໌ເຊື່ອມຕໍ່ຖານຂໍ້ມູນ & ລະບົບບັນທຶກປະຫວັດ (Logger) ---
-session_start();
+require_once 'config/session_check.php';
+enforcePermission('settings');
+$is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
+$can_edit = ($is_admin || hasPermission('settings_edit'));
 require_once 'config/db.php';
 require_once 'config/logger.php';
 
@@ -19,36 +21,71 @@ $settings_data = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
 // --- ສ່ວນຈັດການເມື່ອມີການສົ່ງຟອມບັນທຶກການຕັ້ງຄ່າ (POST request) ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_settings'])) {
+    if (!$can_edit) {
+        $_SESSION['error'] = "ທ່ານບໍ່ມີສິດໃນການແກ້ໄຂການຕັ້ງຄ່າ!";
+        header("Location: settings.php");
+        exit();
+    }
     // ບັນທຶກຂໍ້ມູນທົ່ວໄປ (ຊື່ໂຮງແຮມ, ເບີໂທ, ທີ່ຢູ່, ທ້າຍບິນ, ອາກອນ)
     $keys_to_update = ['hotel_name', 'hotel_phone', 'hotel_address', 'receipt_footer', 'tax_percent'];
     foreach ($keys_to_update as $k) {
         if (isset($_POST[$k])) {
             $val = $_POST[$k];
-            $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = ?")->execute([$val, $k]);
+            $pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)")->execute([$k, $val]);
         }
     }
 
     // --- ສ່ວນຈັດການອັບໂຫຼດ ໂລໂກ້ໂຮງແຮມ (Hotel Logo Upload) ---
     if (isset($_FILES['hotel_logo']) && $_FILES['hotel_logo']['error'] == 0) {
+        $filesize = $_FILES['hotel_logo']['size'];
+        if ($filesize > 2 * 1024 * 1024) {
+            $_SESSION['error'] = 'ໂລໂກ້ໂຮງແຮມ: ຮູບພາບໃຫຍ່ເກີນໄປ! ອະນຸຍາດບໍ່ເກີນ 2MB';
+            header("Location: settings.php");
+            exit();
+        }
         $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
         $filename = $_FILES['hotel_logo']['name'];
         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         if (in_array($ext, $allowed)) {
             $newname = 'logo_' . time() . '.' . $ext;
+            if (!is_dir('assets/img/logo/')) { mkdir('assets/img/logo/', 0777, true); }
             if (move_uploaded_file($_FILES['hotel_logo']['tmp_name'], 'assets/img/logo/' . $newname)) {
-                $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = 'hotel_logo'")->execute([$newname]);
+                // ດຶງຊື່ຮູບເກົ່າມາລຶບຖິ້ມ
+                $stmt = $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'hotel_logo'");
+                $old_logo = $stmt->fetchColumn();
+                if ($old_logo && $old_logo !== 'logo.png' && file_exists('assets/img/logo/' . $old_logo)) {
+                    unlink('assets/img/logo/' . $old_logo);
+                }
+                $pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('hotel_logo', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)")->execute([$newname]);
+            } else {
+                $_SESSION['error'] = 'ບໍ່ສາມາດອັບໂຫຼດຮູບໂລໂກ້ໄດ້! ກວດສອບ Permissions Folder.';
             }
         }
     }
     // --- ສ່ວນຈັດການອັບໂຫຼດ QR ຮັບເງິນ (Payment QR Upload) ---
     if (isset($_FILES['hotel_qr']) && $_FILES['hotel_qr']['error'] == 0) {
+        $filesize = $_FILES['hotel_qr']['size'];
+        if ($filesize > 2 * 1024 * 1024) {
+            $_SESSION['error'] = 'QR ຮັບເງິນ: ຮູບພາບໃຫຍ່ເກີນໄປ! ອະນຸຍາດບໍ່ເກີນ 2MB';
+            header("Location: settings.php");
+            exit();
+        }
         $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
         $filename = $_FILES['hotel_qr']['name'];
         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         if (in_array($ext, $allowed)) {
             $newname = 'qr_' . time() . '.' . $ext;
+            if (!is_dir('assets/img/QR/')) { mkdir('assets/img/QR/', 0777, true); }
             if (move_uploaded_file($_FILES['hotel_qr']['tmp_name'], 'assets/img/QR/' . $newname)) {
-                $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = 'hotel_qr'")->execute([$newname]);
+                // ດຶງຊື່ຮູບເກົ່າມາລຶບຖິ້ມ
+                $stmt = $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'hotel_qr'");
+                $old_qr = $stmt->fetchColumn();
+                if ($old_qr && $old_qr !== 'qr.png' && file_exists('assets/img/QR/' . $old_qr)) {
+                    unlink('assets/img/QR/' . $old_qr);
+                }
+                $pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('hotel_qr', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)")->execute([$newname]);
+            } else {
+                $_SESSION['error'] = 'ບໍ່ສາມາດອັບໂຫຼດຮູບ QR ໄດ້! ກວດສອບ Permissions Folder.';
             }
         }
     }
@@ -80,13 +117,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_settings'])) {
 </head>
 <body>
 
+<?php
+    $logo_file = $settings_data['hotel_logo'] ?? 'logo.png';
+    $logo_path = 'assets/img/logo/' . $logo_file;
+    if (!file_exists($logo_path) || empty($logo_file)) {
+        $logo_path = 'assets/img/image.jpg';
+    }
+
+    $qr_file = $settings_data['hotel_qr'] ?? 'qr.png';
+    $qr_path = 'assets/img/QR/' . $qr_file;
+    if (!file_exists($qr_path) || empty($qr_file)) {
+        $qr_path = 'assets/img/image.jpg';
+    }
+?>
+
 <div class="container-fluid">
     <?php if(isset($_SESSION['success'])): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="fas fa-check-circle mr-2"></i> <?php echo $_SESSION['success']; ?>
             <button type="button" class="close" data-dismiss="alert">&times;</button>
         </div>
+        <script>
+            if (window.parent !== window) {
+                var parentLogo = window.parent.document.querySelector('.brand-link img');
+                if (parentLogo) {
+                    parentLogo.src = '<?php echo $logo_path; ?>?t=' + new Date().getTime();
+                }
+                var parentName = window.parent.document.querySelector('.brand-text b');
+                if (parentName) {
+                    parentName.innerText = '<?php echo htmlspecialchars($settings_data['hotel_name'] ?? ''); ?>';
+                }
+            }
+        </script>
     <?php unset($_SESSION['success']); endif; ?>
+    
+    <?php if(isset($_SESSION['error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle mr-2"></i> <?php echo $_SESSION['error']; ?>
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+        </div>
+    <?php unset($_SESSION['error']); endif; ?>
 
     <div class="row mb-4">
         <div class="col-12">
@@ -122,38 +192,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_settings'])) {
                                 <div class="row mb-4 text-center">
                                     <div class="col-sm-6 border-right">
                                         <label class="d-block"><?php echo $lang['hotel_logo'] ?? 'ໂລໂກ້ໂຮງແຮມ'; ?></label>
-                                        <img id="prevLogo" src="assets/img/logo/<?php echo $settings_data['hotel_logo'] ?? 'logo.png'; ?>" class="logo-preview mb-2 shadow-sm">
+                                        <img id="prevLogo" src="<?php echo $logo_path; ?>" class="logo-preview mb-2 shadow-sm">
                                         <div class="mt-1">
-                                            <label for="hotel_logo" class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-image mr-1"></i> <?php echo $lang['change_logo'] ?? 'ປ່ຽນໂລໂກ້'; ?>
-                                            </label>
-                                            <input type="file" name="hotel_logo" id="hotel_logo" class="d-none" onchange="previewImg(this, 'prevLogo')">
+                                            <?php if ($can_edit): ?>
+                                                <label for="hotel_logo" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-image mr-1"></i> <?php echo $lang['change_logo'] ?? 'ປ່ຽນໂລໂກ້'; ?>
+                                                </label>
+                                                <input type="file" name="hotel_logo" id="hotel_logo" class="d-none" accept=".jpg,.jpeg,.png,.gif,.webp,.jfif,.avif,image/jpeg,image/png,image/gif,image/webp" onchange="previewImg(this, 'prevLogo')">
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
                                         <label class="d-block"><?php echo $lang['payment_qr'] ?? 'QR ຮັບເງິນ (Payment)'; ?></label>
-                                        <img id="prevQR" src="assets/img/QR/<?php echo $settings_data['hotel_qr'] ?? 'qr.png'; ?>" class="logo-preview mb-2 shadow-sm">
+                                        <img id="prevQR" src="<?php echo $qr_path; ?>" class="logo-preview mb-2 shadow-sm">
                                         <div class="mt-1">
-                                            <label for="hotel_qr" class="btn btn-sm btn-outline-success">
-                                                <i class="fas fa-qrcode mr-1"></i> <?php echo $lang['change_qr'] ?? 'ປ່ຽນ QR'; ?>
-                                            </label>
-                                            <input type="file" name="hotel_qr" id="hotel_qr" class="d-none" onchange="previewImg(this, 'prevQR')">
+                                            <?php if ($can_edit): ?>
+                                                <label for="hotel_qr" class="btn btn-sm btn-outline-success">
+                                                    <i class="fas fa-qrcode mr-1"></i> <?php echo $lang['change_qr'] ?? 'ປ່ຽນ QR'; ?>
+                                                </label>
+                                                <input type="file" name="hotel_qr" id="hotel_qr" class="d-none" accept=".jpg,.jpeg,.png,.gif,.webp,.jfif,.avif,image/jpeg,image/png,image/gif,image/webp" onchange="previewImg(this, 'prevQR')">
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="form-group row">
                                     <label class="col-sm-3 col-form-label"><?php echo $lang['hotel_name'] ?? 'ຊື່ໂຮງແຮມ'; ?></label>
-                                    <div class="col-sm-9"><input type="text" name="hotel_name" class="form-control" value="<?php echo htmlspecialchars($settings_data['hotel_name'] ?? ''); ?>"></div>
+                                    <div class="col-sm-9"><input type="text" name="hotel_name" class="form-control" value="<?php echo htmlspecialchars($settings_data['hotel_name'] ?? ''); ?>" <?php echo $can_edit ? '' : 'readonly'; ?>></div>
                                 </div>
                                 <div class="form-group row">
                                     <label class="col-sm-3 col-form-label"><?php echo $lang['phone_number'] ?? 'ເບີໂທລະສັບ'; ?></label>
-                                    <div class="col-sm-9"><input type="text" name="hotel_phone" class="form-control" value="<?php echo htmlspecialchars($settings_data['hotel_phone'] ?? ''); ?>"></div>
+                                    <div class="col-sm-9"><input type="text" name="hotel_phone" class="form-control" value="<?php echo htmlspecialchars($settings_data['hotel_phone'] ?? ''); ?>" <?php echo $can_edit ? '' : 'readonly'; ?>></div>
                                 </div>
                                 <div class="form-group row">
                                     <label class="col-sm-3 col-form-label"><?php echo $lang['address'] ?? 'ທີ່ຢູ່'; ?></label>
-                                    <div class="col-sm-9"><textarea name="hotel_address" class="form-control" rows="2"><?php echo htmlspecialchars($settings_data['hotel_address'] ?? ''); ?></textarea></div>
+                                    <div class="col-sm-9"><textarea name="hotel_address" class="form-control" rows="2" <?php echo $can_edit ? '' : 'readonly'; ?>><?php echo htmlspecialchars($settings_data['hotel_address'] ?? ''); ?></textarea></div>
                                 </div>
-                                <div class="text-right"><button type="submit" name="save_settings" class="btn btn-primary px-4"><?php echo $lang['save'] ?? 'ບັນທຶກ'; ?></button></div>
+                                <?php if ($can_edit): ?>
+                                    <div class="text-right"><button type="submit" name="save_settings" class="btn btn-primary px-4"><?php echo $lang['save'] ?? 'ບັນທຶກ'; ?></button></div>
+                                <?php else: ?>
+                                    <div class="text-right"><span class="badge badge-secondary py-2 px-3 font-weight-bold" style="font-size: 0.82rem;"><i class="fas fa-lock mr-1"></i> ເບິ່ງຢ່າງດຽວ (View Only)</span></div>
+                                <?php endif; ?>
                             </form>
                         </div>
 
@@ -163,7 +241,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_settings'])) {
                                 <?php
                                     $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
                                     $host = $_SERVER['HTTP_HOST'];
-                                    $qr_url = "$protocol://$host/ProjectHotel2026/customer_order.php";
+                                    $qr_url = "$protocol://$host/ProjectHotel2026/services/customer_order.php";
                                     $qr_api = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" . urlencode($qr_url);
                                 ?>
                                 <h4 class="mb-4"><?php echo $lang['qr_desc_customer'] ?? 'QR Code ສຳລັບໃຫ້ລູກຄ້າສະແກນສັ່ງອາຫານ'; ?></h4>
@@ -181,13 +259,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_settings'])) {
                             <form action="" method="post">
                                 <div class="form-group row">
                                     <label class="col-sm-3 col-form-label text-right"><?php echo $lang['tax_percent'] ?? 'ອາກອນ (%)'; ?></label>
-                                    <div class="col-sm-9"><input type="number" name="tax_percent" class="form-control" value="<?php echo htmlspecialchars($settings_data['tax_percent'] ?? '0'); ?>"></div>
+                                    <div class="col-sm-9"><input type="number" name="tax_percent" class="form-control" value="<?php echo htmlspecialchars($settings_data['tax_percent'] ?? '0'); ?>" <?php echo $can_edit ? '' : 'readonly'; ?>></div>
                                 </div>
                                 <div class="form-group row">
                                     <label class="col-sm-3 col-form-label text-right"><?php echo $lang['receipt_footer'] ?? 'ຂໍ້ຄວາມທ້າຍບິນ'; ?></label>
-                                    <div class="col-sm-9"><input type="text" name="receipt_footer" class="form-control" value="<?php echo htmlspecialchars($settings_data['receipt_footer'] ?? ''); ?>"></div>
+                                    <div class="col-sm-9"><input type="text" name="receipt_footer" class="form-control" value="<?php echo htmlspecialchars($settings_data['receipt_footer'] ?? ''); ?>" <?php echo $can_edit ? '' : 'readonly'; ?>></div>
                                 </div>
-                                <div class="text-right"><button type="submit" name="save_settings" class="btn btn-primary px-4"><?php echo $lang['save'] ?? 'ບັນທຶກ'; ?></button></div>
+                                <?php if ($can_edit): ?>
+                                    <div class="text-right"><button type="submit" name="save_settings" class="btn btn-primary px-4"><?php echo $lang['save'] ?? 'ບັນທຶກ'; ?></button></div>
+                                <?php else: ?>
+                                    <div class="text-right"><span class="badge badge-secondary py-2 px-3 font-weight-bold" style="font-size: 0.82rem;"><i class="fas fa-lock mr-1"></i> ເບິ່ງຢ່າງດຽວ (View Only)</span></div>
+                                <?php endif; ?>
                             </form>
                         </div>
 
@@ -212,6 +294,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_settings'])) {
 <script>
 function previewImg(input, id) {
     if (input.files && input.files[0]) {
+        var fileSize = input.files[0].size / 1024 / 1024;
+        if (fileSize > 2) {
+            alert('ຂະໜາດຮູບພາບໃຫຍ່ເກີນໄປ! ກະລຸນາເລືອກຮູບທີ່ຂະໜາດບໍ່ເກີນ 2MB ເພື່ອບໍ່ໃຫ້ລະບົບໜັກ.');
+            input.value = '';
+            return;
+        }
         var reader = new FileReader();
         reader.onload = function(e) { $('#' + id).attr('src', e.target.result); }
         reader.readAsDataURL(input.files[0]);
