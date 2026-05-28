@@ -1,0 +1,8 @@
+body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; }
+.table th, .table td { font-size: 0.85rem !important; vertical-align: middle; }
+.dataTables_wrapper { font-size: 0.85rem !important; }
+.dataTables_empty { font-size: 0.85rem !important; }
+.log-action { font-weight: 700; color: #007bff; font-size: 0.85rem !important; }
+.log-details { font-size: 0.85rem !important; color: #666; }
+.log-time { font-size: 0.8rem !important; color: #888; }
+.user-badge { font-size: 0.7rem !important; vertical-align: middle; }

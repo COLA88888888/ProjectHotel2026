@@ -47,6 +47,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save'])) {
     }
 }
 
+// Handle update
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update'])) {
+    if (!$can_edit) {
+        $_SESSION['error'] = "ທ່ານບໍ່ມີສິດໃນການແກ້ໄຂປະເພດຫ້ອງ!";
+        header("Location: form_room_types.php");
+        exit();
+    }
+    $id = $_POST['id'];
+    $room_type_name_la = $_POST['room_type_name_la'] ?? '';
+    $room_type_name_en = $_POST['room_type_name_en'] ?? '';
+    $room_type_name_cn = $_POST['room_type_name_cn'] ?? '';
+    $room_type_code = $_POST['room_type_code'] ?? '';
+    $description_la = $_POST['description_la'] ?? '';
+    $description_en = $_POST['description_en'] ?? '';
+    $description_cn = $_POST['description_cn'] ?? '';
+
+    // Also update original columns for backward compatibility
+    $room_type_name = $room_type_name_la;
+    $description = $description_la;
+
+    $stmt = $pdo->prepare("UPDATE room_types SET room_type_name = ?, room_type_name_la = ?, room_type_name_en = ?, room_type_name_cn = ?, room_type_code = ?, description = ?, description_la = ?, description_en = ?, description_cn = ? WHERE id = ?");
+    if ($stmt->execute([$room_type_name, $room_type_name_la, $room_type_name_en, $room_type_name_cn, $room_type_code, $description, $description_la, $description_en, $description_cn, $id])) {
+        logActivity($pdo, "ແກ້ໄຂປະເພດຫ້ອງ", "ປະເພດຫ້ອງ: $room_type_name_la ($room_type_code)");
+        $_SESSION['success'] = $lang['save_success'];
+        header("Location: form_room_types.php");
+        exit();
+    } else {
+        $_SESSION['error'] = $lang['error_occurred'];
+    }
+}
+
 // Handle delete
 if (isset($_GET['delete'])) {
     if (!$can_delete) {
@@ -105,23 +136,9 @@ $desc_col = "description_" . $current_lang;
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="../sweetalert/dist/sweetalert2.min.css">
-    <style>
-        body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 20px; font-size: 0.9rem; }
-        
-        /* Table compact styles */
-        .table { font-size: 0.82rem !important; }
-        .table thead th { font-size: 0.78rem !important; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 8px !important; }
-        .table tbody td { padding: 8px 8px !important; vertical-align: middle !important; }
-        
-        /* Prevent unnecessary scrollbar on desktop */
-        @media (min-width: 768px) {
-            .table-responsive { overflow-x: hidden !important; }
-        }
-        
-        .btn-warning { background: transparent !important; border: none !important; color: #ffc107 !important; font-size: 1rem !important; padding: 0 6px !important; box-shadow: none !important; }
-        .btn-danger { background: transparent !important; border: none !important; color: #dc3545 !important; font-size: 1rem !important; padding: 0 6px !important; box-shadow: none !important; }
-        .btn-warning:hover, .btn-danger:hover { opacity: 0.7; }
-    </style>
+    <!-- DataTables -->
+    <link rel="stylesheet" href="../plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="../assets/css/pages/form_room_types.css">
 </head>
 <body>
 
@@ -178,9 +195,9 @@ $desc_col = "description_" . $current_lang;
 
 
                     </div>
-                    <div class="card-footer bg-white border-top-0">
-                        <button type="submit" name="save" class="btn btn-primary px-4"><i class="fas fa-save mr-1"></i> <?php echo $lang['save']; ?></button>
-                        <button type="reset" class="btn btn-default px-4 ml-2"><?php echo $lang['cancel']; ?></button>
+                    <div class="card-footer bg-white border-top-0 d-flex justify-content-center">
+                        <button type="submit" name="save" class="btn btn-primary px-4 font-weight-bold" style="border-radius: 8px;"><i class="fas fa-save mr-1"></i> <?php echo $lang['save']; ?></button>
+                        <button type="reset" class="btn btn-default px-4 font-weight-bold ml-2" style="border-radius: 8px;"><?php echo $lang['cancel']; ?></button>
                     </div>
                 </form>
             </div>
@@ -216,7 +233,11 @@ $desc_col = "description_" . $current_lang;
                                             <td class="text-center">
                                                 <div class="btn-group">
                                                     <?php if ($can_edit): ?>
-                                                    <a href="edit_room_type.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-warning" title="<?php echo $lang['edit']; ?>"><i class="fas fa-edit"></i></a>
+                                                     <a href="#" class="btn btn-sm btn-warning text-white btn-edit-room-type" title="<?php echo $lang['edit']; ?>"
+                                                        data-id="<?php echo $row['id']; ?>"
+                                                        data-code="<?php echo htmlspecialchars($row['room_type_code'] ?? ''); ?>"
+                                                        data-name-la="<?php echo htmlspecialchars($row['room_type_name_la'] ?: $row['room_type_name']); ?>"
+                                                        data-desc-la="<?php echo htmlspecialchars($row['description_la'] ?: $row['description']); ?>"><i class="fas fa-edit"></i></a>
                                                     <?php endif; ?>
                                                     <?php if ($can_delete): ?>
                                                     <a href="#" class="btn btn-sm btn-danger btn-delete" data-id="<?php echo $row['id']; ?>" title="<?php echo $lang['delete']; ?>"><i class="fas fa-trash-alt"></i></a>
@@ -238,6 +259,58 @@ $desc_col = "description_" . $current_lang;
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Room Type Modal -->
+<div class="modal fade" id="editRoomTypeModal" tabindex="-1" role="dialog" aria-labelledby="editRoomTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 15px 50px rgba(0,0,0,0.15);">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title font-weight-bold" id="editRoomTypeModalLabel"><i class="fas fa-edit mr-2"></i> <?php echo $lang['edit'] . ' ' . $lang['room_types']; ?></h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="" method="post" id="editRoomTypeModalForm">
+                <div class="modal-body p-4 text-left">
+                    <input type="hidden" name="id" id="modal_type_id">
+                    
+                    <div class="row">
+                        <!-- Left Column (col-md-6) -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold"><?php echo $lang['room_type_code_label'] ?? 'ລະຫັດປະເພດຫ້ອງ'; ?></label>
+                                <input type="text" name="room_type_code" id="modal_type_code" class="form-control" style="border-radius: 8px;">
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column (col-md-6) -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold"><?php echo $lang['room_type_label'] ?? 'ປະເພດຫ້ອງ'; ?> (Lao) <span class="text-danger">*</span></label>
+                                <input type="text" name="room_type_name_la" id="modal_type_name_la" class="form-control" required style="border-radius: 8px;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-2">
+                        <!-- Full Width Column (col-md-12) for description -->
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="font-weight-bold"><?php echo $lang['details'] ?? 'ລາຍລະອຽດ'; ?> (Lao)</label>
+                                <textarea name="description_la" id="modal_description_la" class="form-control" rows="3" style="border-radius: 8px;"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+                <div class="modal-footer bg-white border-top-0 d-flex justify-content-end p-3 px-4">
+                    <button type="submit" name="update" class="btn btn-warning text-white px-4 font-weight-bold" style="border-radius: 8px; border: 2px solid #d39e00;"><i class="fas fa-save mr-1"></i> <?php echo $lang['save'] ?? 'ບັນທຶກ'; ?></button>
+                    <button type="button" class="btn btn-default px-4 font-weight-bold ml-2" data-dismiss="modal" style="border-radius: 8px;"><?php echo $lang['cancel'] ?? 'ຍົກເລີກ'; ?></button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -303,6 +376,38 @@ $(document).ready(function() {
                 window.location.href = "?delete=" + id;
             }
         });
+    });
+
+    // Edit room type modal pop-up and data populating
+    $(document).on('click', '.btn-edit-room-type', function(e) {
+        e.preventDefault();
+        var id = $(this).data('id');
+        var code = $(this).data('code');
+        var nameLa = $(this).data('name-la');
+        var descLa = $(this).data('desc-la');
+        
+        $('#modal_type_id').val(id);
+        $('#modal_type_code').val(code);
+        $('#modal_type_name_la').val(nameLa);
+        $('#modal_description_la').val(descLa);
+        
+        $('#editRoomTypeModal').modal('show');
+    });
+
+    // Validate Edit Room Type Modal Form
+    $('#editRoomTypeModalForm').on('submit', function(e) {
+        var roomTypeNameLa = $('#modal_type_name_la').val().trim();
+        
+        if (roomTypeNameLa === '') {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'warning',
+                title: '<?php echo $lang['warning_label'] ?? 'ແຈ້ງເຕືອນ'; ?>',
+                text: '<?php echo $lang['room_type_required_msg'] ?? 'ກະລຸນາປ້ອນຊື່ປະເພດຫ້ອງ (ພາສາລາວ)!'; ?>',
+                confirmButtonText: '<?php echo $lang['ok'] ?? 'ຕົກລົງ'; ?>'
+            });
+            return false;
+        }
     });
 });
 </script>

@@ -1,0 +1,39 @@
+body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 10px; }
+.avatar { width: 50px; height: 50px; object-fit: cover; border-radius: 50%; border: 2px solid #ddd; }
+.avatar-lg { width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 3px solid #007bff; margin-bottom: 15px; }
+.btn-edit { background: transparent !important; border: none !important; color: #ffc107 !important; font-size: 1.15rem; padding: 0 8px; box-shadow: none !important; }
+.btn-delete { background: transparent !important; border: none !important; color: #dc3545 !important; font-size: 1.15rem; padding: 0 8px; box-shadow: none !important; }
+.btn-edit:hover, .btn-delete:hover { opacity: 0.7; }
+/* Desktop table */
+.desktop-table { display: block; }
+.mobile-cards { display: none; }
+/* User Card for Mobile */
+.user-card { border-radius: 12px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 12px; overflow: hidden; transition: transform 0.2s; }
+.user-card:active { transform: scale(0.98); }
+.user-card .card-body { padding: 15px; }
+.user-card .user-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.user-card .avatar-mobile { width: 55px; height: 55px; object-fit: cover; border-radius: 50%; border: 3px solid #5DADE2; }
+.user-card .user-info { flex: 1; min-width: 0; }
+.user-card .user-name { font-weight: 700; font-size: 1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-card .user-username { color: #5DADE2; font-size: 0.85rem; font-weight: 600; }
+.user-card .detail-row { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; font-size: 0.88rem; color: #555; border-top: 1px solid #f0f0f0; }
+.user-card .detail-row i { width: 18px; text-align: center; margin-top: 3px; color: #5DADE2; }
+.user-card .card-actions { display: flex; gap: 15px; margin-top: 12px; justify-content: center; }
+.user-card .card-actions .btn { flex: none; border-radius: 0; font-size: 1.3rem; padding: 5px 15px; }
+.page-header h2 { font-size: 1.4rem; }
+/* Tablet & Mobile */
+@media (max-width: 991px) {
+    .desktop-table { display: none !important; }
+    .mobile-cards { display: block !important; }
+    .page-header h2 { font-size: 1.15rem; }
+    .page-header .btn { font-size: 0.85rem; padding: 6px 14px; }
+}
+@media (max-width: 576px) {
+    body { padding: 6px; }
+    .page-header { flex-direction: column; gap: 10px; }
+    .page-header .col-text-right { text-align: left !important; }
+    .page-header h2 { font-size: 1.05rem; }
+    .modal-dialog { margin: 10px; }
+    .modal-body .row .col-md-6 { margin-bottom: 0; }
+    .avatar-lg { width: 80px; height: 80px; }
+}

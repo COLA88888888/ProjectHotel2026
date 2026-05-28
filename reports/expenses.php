@@ -108,31 +108,7 @@ foreach($expenses as $ex) {
     <link rel="stylesheet" href="../plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="../sweetalert/dist/sweetalert2.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 20px; }
-        .table th, .table td { font-size: 0.85rem !important; vertical-align: middle; }
-        .dataTables_wrapper { font-size: 0.85rem !important; }
-        .dataTables_empty { font-size: 0.85rem !important; }
-        .stat-card { border-radius: 15px; padding: 20px; color: white; position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .stat-card-label { font-size: 0.9rem; opacity: 0.9; }
-        .stat-card-value { font-size: 1.8rem; font-weight: 700; margin-top: 5px; }
-        .stat-card-icon { position: absolute; right: 20px; bottom: 20px; font-size: 3rem; opacity: 0.2; }
-        @media (max-width: 768px) { 
-            body { padding: 10px; }
-            h2 { font-size: 1.25rem; margin-bottom: 15px !important; }
-            .stat-card { padding: 15px; margin-bottom: 15px; }
-            .stat-card-value { font-size: 1.4rem; }
-            .stat-card-label { font-size: 0.8rem; }
-            .stat-card-icon { font-size: 2.2rem; right: 15px; bottom: 15px; }
-            .header-flex { flex-direction: column; align-items: flex-start !important; }
-            .filter-form { width: 100%; display: flex; flex-direction: column; gap: 8px; }
-            .filter-form input, .filter-form button { width: 100% !important; margin: 0 !important; }
-            .table { font-size: 0.8rem !important; }
-            .table th, .table td { padding: 8px 4px !important; }
-            .card-title { font-size: 1rem !important; }
-            .card-body { padding: 10px !important; }
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/pages/expenses.css">
 </head>
 <body>
 
@@ -140,7 +116,12 @@ foreach($expenses as $ex) {
     <?php if(isset($_SESSION['success'])): ?>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                Swal.fire({ icon: 'success', title: '<?php echo $lang['ok']; ?>', timer: 1500, showConfirmButton: false });
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: '<?php echo $lang['save_success'] ?? 'ບັນທຶກຂໍ້ມູນສຳເລັດ'; ?>', 
+                    showConfirmButton: false, 
+                    timer: 2000 
+                });
             });
         </script>
     <?php unset($_SESSION['success']); endif; ?>
@@ -154,7 +135,7 @@ foreach($expenses as $ex) {
                 <input type="date" name="start_date" class="form-control form-control-sm mr-2" value="<?php echo $start_date; ?>">
                 <span class="mr-2 d-none d-md-inline"><?php echo $lang['to'] ?? 'ຫາ'; ?></span>
                 <input type="date" name="end_date" class="form-control form-control-sm mr-2" value="<?php echo $end_date; ?>">
-                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> <span class="d-none d-md-inline"><?php echo $lang['search']; ?></span></button>
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search mr-1"></i> <?php echo $lang['search']; ?></button>
              </form>
         </div>
     </div>
@@ -198,8 +179,9 @@ foreach($expenses as $ex) {
                             <input type="date" name="expense_date" class="form-control" value="<?php echo date('Y-m-d'); ?>">
                         </div>
                     </div>
-                    <div class="card-footer">
-                        <button type="submit" name="add_expense" class="btn btn-primary btn-block"><i class="fas fa-save"></i> <?php echo $lang['save']; ?></button>
+                    <div class="card-footer bg-white border-top-0 d-flex justify-content-center">
+                        <button type="submit" name="add_expense" class="btn btn-primary px-4 font-weight-bold" style="border-radius: 8px;"><i class="fas fa-save mr-1"></i> <?php echo $lang['save']; ?></button>
+                        <button type="reset" class="btn btn-default px-4 font-weight-bold ml-2" style="border-radius: 8px;"><?php echo $lang['cancel']; ?></button>
                     </div>
                 </form>
             </div>
@@ -208,7 +190,7 @@ foreach($expenses as $ex) {
         <!-- Expense List -->
         <div class="col-md-8">
             <div class="card card-outline card-danger shadow-sm">
-                <div class="card-body p-0">
+                <div class="card-body p-3">
                     <div class="table-responsive">
                         <table id="expenseTable" class="table table-hover text-center m-0">
                             <thead>
@@ -269,22 +251,22 @@ foreach($expenses as $ex) {
 <!-- Edit Expense Modal -->
 <div class="modal fade" id="editExpenseModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 15px 50px rgba(0,0,0,0.15);">
             <div class="modal-header bg-warning text-white">
-                <h5 class="modal-title"><i class="fas fa-edit"></i> <?php echo $lang['edit'] ?? 'ແກ້ໄຂ'; ?></h5>
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-edit mr-2"></i> <?php echo $lang['edit'] ?? 'ແກ້ໄຂ'; ?></h5>
                 <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
             </div>
             <form action="" method="post">
                 <input type="hidden" name="edit_expense" value="1">
                 <input type="hidden" name="expense_id" id="edit_id">
-                <div class="modal-body">
+                <div class="modal-body p-4 text-left">
                     <div class="form-group">
-                        <label><?php echo $lang['expense_title']; ?></label>
-                        <input type="text" name="expense_title" id="edit_title" class="form-control" required>
+                        <label class="font-weight-bold"><?php echo $lang['expense_title']; ?></label>
+                        <input type="text" name="expense_title" id="edit_title" class="form-control" required style="border-radius: 8px;">
                     </div>
                     <div class="form-group">
-                        <label><?php echo $lang['category']; ?></label>
-                        <select name="category" id="edit_category" class="form-control" required>
+                        <label class="font-weight-bold"><?php echo $lang['category']; ?></label>
+                        <select name="category" id="edit_category" class="form-control" required style="border-radius: 8px;">
                             <option value="Other"><?php echo $lang['cat_other']; ?></option>
                             <option value="Electricity"><?php echo $lang['cat_electricity']; ?></option>
                             <option value="Water"><?php echo $lang['cat_water']; ?></option>
@@ -294,17 +276,17 @@ foreach($expenses as $ex) {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label><?php echo $lang['expense_amount']; ?></label>
-                        <input type="text" name="amount" id="edit_amount" class="form-control number-format" required>
+                        <label class="font-weight-bold"><?php echo $lang['expense_amount']; ?></label>
+                        <input type="text" name="amount" id="edit_amount" class="form-control number-format" required style="border-radius: 8px;">
                     </div>
                     <div class="form-group">
-                        <label><?php echo $lang['expense_date']; ?></label>
-                        <input type="date" name="expense_date" id="edit_date" class="form-control" required>
+                        <label class="font-weight-bold"><?php echo $lang['expense_date']; ?></label>
+                        <input type="date" name="expense_date" id="edit_date" class="form-control" required style="border-radius: 8px;">
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal"><?php echo $lang['cancel']; ?></button>
-                    <button type="submit" class="btn btn-warning text-white"><?php echo $lang['save']; ?></button>
+                <div class="modal-footer bg-white border-top-0 d-flex justify-content-end p-3 px-4">
+                    <button type="submit" class="btn btn-warning text-white px-4 font-weight-bold" style="border-radius: 8px; border: 2px solid #d39e00;"><i class="fas fa-save mr-1"></i> <?php echo $lang['save'] ?? 'ບັນທຶກ'; ?></button>
+                    <button type="button" class="btn btn-default px-4 font-weight-bold ml-2" data-dismiss="modal" style="border-radius: 8px;"><?php echo $lang['cancel'] ?? 'ຍົກເລີກ'; ?></button>
                 </div>
             </form>
         </div>

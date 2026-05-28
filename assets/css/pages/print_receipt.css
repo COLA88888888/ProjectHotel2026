@@ -1,0 +1,68 @@
+body { 
+    font-family: 'Noto Sans Lao', 'Noto Sans Lao Looped', 'Phetsarath OT', sans-serif; 
+    font-size: 13px; 
+    margin: 0; 
+    padding: 0; 
+    color: #000; 
+    background: #f4f4f4; 
+    overflow-x: hidden; 
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+.receipt { 
+    width: 100%; 
+    max-width: 75mm; 
+    margin: 10px auto; 
+    background: #fff; 
+    padding: 5mm; 
+    box-sizing: border-box; 
+    box-shadow: 0 0 10px rgba(0,0,0,0.1); 
+    page-break-inside: avoid; 
+}
+.header { text-align: center; margin-bottom: 15px; }
+.hotel-name { font-size: 18px; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; color: #000; }
+.divider { border-top: 1.5px dashed #000; margin: 8px 0; }
+.info-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; font-size: 12px; line-height: 1.4; color: #000; }
+.info-row span:first-child { flex: 1; padding-right: 5px; color: #000; font-weight: 500; }
+.info-row span:last-child { text-align: right; font-weight: 700; color: #000; }
+.item-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; table-layout: fixed; color: #000; }
+.item-table th { border-bottom: 1.5px dashed #000; text-align: left; padding: 6px 0; color: #000; font-weight: 700; }
+.item-table td { padding: 8px 0; vertical-align: top; border-bottom: 1px dashed #ddd; word-wrap: break-word; color: #000; }
+.item-table tr:last-child td { border-bottom: none; }
+.text-right { text-align: right !important; }
+.total-section { margin-top: 10px; }
+.grand-total { font-size: 16px; font-weight: 700; border-top: 1.5px solid #000; padding-top: 6px; margin-top: 6px; color: #000; }
+.footer { text-align: center; margin-top: 15px; font-size: 11px; line-height: 1.4; color: #000; font-weight: 500; }
+
+@media print {
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color: #000 !important;
+        text-shadow: none !important;
+        box-shadow: none !important;
+    }
+    body { background: none; padding: 0; margin: 0; }
+    .receipt { max-width: 100%; width: 100%; padding: 3mm; margin: 0; box-shadow: none; }
+    .no-print { display: none; }
+}
+
+.btn-print {
+    display: inline-block;
+    padding: 8px 18px;
+    background: #28a745;
+    color: #fff;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'Noto Sans Lao', 'Noto Sans Lao Looped', sans-serif;
+}
+
+@media (max-width: 400px) {
+    .receipt { margin: 5px auto; padding: 3mm; }
+    body { font-size: 11px; }
+}

@@ -284,27 +284,7 @@ $low_stock_count = $stmtLow->fetch()['low_stock_count'] ?? 0;
     <link rel="stylesheet" href="../plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="../sweetalert/dist/sweetalert2.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        *:not(.fas):not(.far):not(.fab):not(.fa) { font-family: 'Noto Sans Lao Looped', sans-serif !important; }
-        body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 20px; }
-        .table th, .table td { font-size: 0.85rem !important; vertical-align: middle; }
-        .dataTables_wrapper { font-size: 0.85rem !important; }
-        .dataTables_empty { font-size: 0.85rem !important; }
-        .btn-edit { background: transparent !important; border: none !important; color: #ffc107 !important; font-size: 1.15rem; padding: 0 8px; }
-        .btn-restock { background: transparent !important; border: none !important; color: #17a2b8 !important; font-size: 1.15rem; padding: 0 8px; }
-        .btn-delete { background: transparent !important; border: none !important; color: #dc3545 !important; font-size: 1.15rem; padding: 0 8px; }
-        .btn-edit:hover, .btn-restock:hover, .btn-delete:hover { opacity: 0.7; }
-        @media (max-width: 768px) {
-            body { padding: 10px; }
-            h2 { font-size: 1.2rem; }
-            .card-title { font-size: 1rem; }
-            .alert { font-size: 0.85rem; padding: 0.5rem 0.75rem !important; }
-            .table th, .table td { padding: 0.6rem 0.4rem !important; font-size: 0.8rem !important; }
-            .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate { font-size: 0.75rem; text-align: center !important; }
-            .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter { text-align: left !important; margin-bottom: 10px; }
-            .card-body { padding: 0.75rem; }
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/pages/stock.css">
 </head>
 <body>
 

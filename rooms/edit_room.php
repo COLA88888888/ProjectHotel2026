@@ -75,9 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update'])) {
     <link rel="stylesheet" href="../sweetalert/dist/sweetalert2.min.css">
     <!-- Noto Sans Lao Looped -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 20px; }
-    </style>
+    <link rel="stylesheet" href="../assets/css/pages/edit_room.css">
 </head>
 <body>
 

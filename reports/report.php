@@ -188,7 +188,6 @@ while($row = $stmtRT->fetch()) {
     $room_type_labels[] = $row['room_type'] ?: $row['room_type_name'] ?: 'Unknown';
     $room_type_revenue[] = (float)$row['total'];
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $current_lang; ?>">
@@ -208,99 +207,7 @@ while($row = $stmtRT->fetch()) {
     <link rel="stylesheet" href="../sweetalert/dist/sweetalert2.min.css">
     <!-- Noto Sans Lao Looped -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        *:not(.fas):not(.far):not(.fab):not(.fa) { font-family: 'Noto Sans Lao Looped', sans-serif !important; }
-        body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f0f4f8; padding: 20px; }
-        
-        /* ===== Modern & Compact Stat Cards ===== */
-        .stat-cards-row { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 20px; 
-            margin-bottom: 24px; 
-        }
-        @media (min-width: 1200px) {
-            .stat-cards-row { grid-template-columns: repeat(4, 1fr); }
-        }
-        @media (min-width: 1600px) {
-            .stat-cards-row { grid-template-columns: repeat(5, 1fr); }
-        }
-
-        .stat-card {
-            position: relative;
-            border-radius: 16px;
-            padding: 20px 22px;
-            color: #fff;
-            overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-            text-decoration: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 125px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .stat-card:hover {
-            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-        }
-
-        .stat-card.gc-green  { background: linear-gradient(135deg, #1D976C 0%, #93F9B9 100%); }
-        .stat-card.gc-amber  { background: linear-gradient(135deg, #FF8008 0%, #FFC837 100%); }
-        .stat-card.gc-blue   { background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%); }
-        .stat-card.gc-indigo { background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%); }
-        .stat-card.gc-teal   { background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%); }
-        .stat-card.gc-dark   { background: linear-gradient(135deg, #30E8BF 0%, #FF8235 100%); }
-
-        .stat-card-label { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; opacity: 0.9; margin-bottom: 8px; }
-        .stat-card-value { font-size: 1.9rem; font-weight: 800; line-height: 1.1; }
-        .stat-card-icon { font-size: 2.2rem; opacity: 0.2; position: absolute; top: 15px; right: 18px; }
-
-        /* Section Header */
-        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #eef2f7; }
-        .section-header h2 { margin: 0; font-weight: 800; color: #2c3e50; font-size: 1.7rem; }
-        .section-header form .input-group { max-width: 200px; }
-
-        .card { border-radius: 16px !important; border: none !important; box-shadow: 0 10px 30px rgba(0,0,0,0.05) !important; }
-        .card-header { background: #fff !important; border-bottom: 1px solid #f0f4f8 !important; border-radius: 16px 16px 0 0 !important; padding: 15px 20px !important; }
-        .card-title { font-weight: 800 !important; color: #2c3e50 !important; font-size: 1.1rem !important; }
-
-        @media (max-width: 768px) {
-            body { padding: 10px; }
-            .stat-cards-row { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-            .stat-card-value { font-size: 1.25rem; }
-            .stat-card { min-height: 90px; padding: 12px; }
-            .stat-card-label { font-size: 0.75rem; letter-spacing: 0.3px; }
-            .stat-card-icon { font-size: 1.8rem; top: 12px; right: 12px; }
-            .section-header { flex-direction: column; align-items: flex-start; gap: 15px; }
-            .section-header h2 { font-size: 1.3rem; margin-bottom: 0; }
-            .section-header form { width: 100%; display: flex; flex-direction: column; gap: 0; }
-            .filter-wrapper { 
-                flex-direction: column; 
-                width: 100%; 
-                gap: 12px !important; 
-                background: #fff;
-                padding: 15px;
-                border-radius: 12px;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-                margin-top: 10px;
-            }
-            .filter-wrapper .input-group { width: 100% !important; margin: 0 !important; }
-            .filter-wrapper .form-control { height: 42px !important; border-radius: 8px !important; }
-            .filter-wrapper .input-group-text { border-radius: 8px 0 0 8px !important; }
-            .filter-wrapper .form-control { border-radius: 0 8px 8px 0 !important; }
-            .filter-wrapper button { width: 100% !important; height: 42px; margin-top: 5px; border-radius: 8px !important; font-weight: 700; }
-            .container-fluid { padding: 0 10px; width: 100% !important; overflow-x: hidden; }
-            .row { margin-left: -5px; margin-right: -5px; width: 100% !important; }
-            .col-12, .col-lg-8, .col-lg-4 { padding-left: 5px; padding-right: 5px; width: 100% !important; }
-        }
-        @media (max-width: 480px) {
-            .stat-cards-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .stat-card-value { font-size: 1.15rem; word-break: break-word; }
-            .stat-card-label { font-size: 0.7rem; }
-            .stat-card { min-height: 80px; padding: 12px 10px; }
-            .stat-card-icon { font-size: 1.5rem; top: 10px; right: 10px; }
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/pages/report.css?v=<?php echo time(); ?>">
 </head>
 <body>
 
@@ -322,7 +229,7 @@ while($row = $stmtRT->fetch()) {
                     </div>
                     <input type="date" name="end_date" class="form-control border-left-0" value="<?php echo $end_date; ?>">
                 </div>
-                <button type="submit" class="btn btn-primary btn-sm px-4 shadow-sm"><i class="fas fa-search"></i> <span class="d-none d-md-inline"><?php echo $lang['search'] ?? 'ຄົ້ນຫາ'; ?></span></button>
+                <button type="submit" class="btn btn-primary btn-sm px-4 shadow-sm"><i class="fas fa-search mr-1"></i> <?php echo $lang['search'] ?? 'ຄົ້ນຫາ'; ?></button>
             </div>
         </form>
     </div>
@@ -419,8 +326,6 @@ while($row = $stmtRT->fetch()) {
 
 
     </div>
-
-
 
 </div>
 

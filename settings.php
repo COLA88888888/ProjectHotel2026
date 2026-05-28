@@ -26,8 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_settings'])) {
         header("Location: settings.php");
         exit();
     }
-    // ບັນທຶກຂໍ້ມູນທົ່ວໄປ (ຊື່ໂຮງແຮມ, ເບີໂທ, ທີ່ຢູ່, ທ້າຍບິນ, ອາກອນ)
-    $keys_to_update = ['hotel_name', 'hotel_phone', 'hotel_address', 'receipt_footer', 'tax_percent'];
+    // ບັນທຶກຂໍ້ມູນທົ່ວໄປ (ຊື່ໂຮງແຮມ, ເບີໂທ, ທີ່ຢູ່, ທ້າຍບິນ, ອາກອນ, ແພັກເກັດ, ວັນໝົດອາຍຸ)
+    $keys_to_update = ['hotel_name', 'hotel_phone', 'hotel_address', 'receipt_footer', 'tax_percent', 'package_name', 'package_expires'];
     foreach ($keys_to_update as $k) {
         if (isset($_POST[$k])) {
             $val = $_POST[$k];
@@ -107,13 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_settings'])) {
     <link rel="stylesheet" href="plugins/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="dist/css/adminlte.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        *:not(.fas):not(.far):not(.fab):not(.fa) { font-family: 'Noto Sans Lao Looped', sans-serif !important; }
-        body { background-color: #f4f6f9; padding: 20px; }
-        .logo-preview { width: 120px; height: 120px; object-fit: contain; border: 1px solid #ddd; padding: 5px; border-radius: 10px; background: white; }
-        .nav-tabs .nav-link.active { font-weight: bold; color: #007bff !important; border-top: 3px solid #007bff; }
-    </style>
+    <link rel="stylesheet" href="assets/css/pages/settings.css">
 </head>
 <body>
 
@@ -180,6 +174,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_settings'])) {
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" id="network-tab" data-toggle="pill" href="#network" role="tab"><i class="fas fa-network-wired mr-1"></i> <?php echo $lang['system_access'] ?? 'ການເຂົ້າເຖິງ'; ?></a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="package-tab" data-toggle="pill" href="#package" role="tab"><i class="fas fa-crown mr-1"></i> ແພັກເກັດການໃຊ້ງານ</a>
                         </li>
                     </ul>
                 </div>
@@ -280,6 +277,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_settings'])) {
                                 <p><?php echo $lang['use_ip_access'] ?? 'ໃຊ້ IP ນີ້ເພື່ອເຂົ້າລະບົບຈາກເຄື່ອງອື່ນ:'; ?></p>
                                 <h3 class="text-center font-weight-bold">http://<?php echo gethostbyname(gethostname()); ?>/ProjectHotel2026</h3>
                             </div>
+                        </div>
+
+                        <!-- Tab 5: Package -->
+                        <div class="tab-pane fade" id="package" role="tabpanel">
+                            <form action="" method="post">
+                                <div class="form-group row">
+                                    <label class="col-sm-3 col-form-label text-right">ຊື່ແພັກເກັດ (Package Name)</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" name="package_name" class="form-control" placeholder="ຕົວຢ່າງ: VIP, Premium, Standard..." value="<?php echo htmlspecialchars($settings_data['package_name'] ?? ''); ?>" <?php echo $can_edit ? '' : 'readonly'; ?>>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label class="col-sm-3 col-form-label text-right">ວັນໝົດອາຍຸ (Expiration Date)</label>
+                                    <div class="col-sm-9">
+                                        <input type="date" name="package_expires" class="form-control" value="<?php echo htmlspecialchars($settings_data['package_expires'] ?? ''); ?>" <?php echo $can_edit ? '' : 'readonly'; ?>>
+                                        <small class="form-text text-muted text-danger">** ໝາຍເຫດ: ປະຫວ່າງໄວ້ (ບໍ່ຕ້ອງເລືອກວັນທີ) ຫາກຕ້ອງການນຳໃຊ້ແບບບໍ່ມີກຳນົດ (ຕະຫຼອດຊີບ).</small>
+                                    </div>
+                                </div>
+                                <?php if ($can_edit): ?>
+                                    <div class="text-right">
+                                        <button type="submit" name="save_settings" class="btn btn-primary px-4">ອັບເດດແພັກເກັດ</button>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="text-right">
+                                        <span class="badge badge-secondary py-2 px-3 font-weight-bold" style="font-size: 0.82rem;"><i class="fas fa-lock mr-1"></i> ເບິ່ງຢ່າງດຽວ (View Only)</span>
+                                    </div>
+                                <?php endif; ?>
+                            </form>
                         </div>
 
                     </div>

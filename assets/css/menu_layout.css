@@ -1,0 +1,184 @@
+/* ===== Light Blue Theme Layout for menu_admin.php and menu_user.php ===== */
+
+*:not(.fas):not(.far):not(.fab):not(.fa) { 
+  font-family: 'Noto Sans Lao Looped', sans-serif !important; 
+}
+body { 
+  font-family: 'Noto Sans Lao Looped', sans-serif !important; 
+}
+.fas, .far, .fab, .fa { 
+  font-family: "Font Awesome 5 Free" !important; 
+  font-weight: 900 !important; 
+}
+.nav-sidebar .menu-is-opening > .nav-link p > .right.fa-angle-right,
+.nav-sidebar .menu-open > .nav-link p > .right.fa-angle-right {
+  transform: rotate(90deg) !important;
+}
+.brand-link.text-center { 
+  transition: padding 0.3s ease; 
+  overflow: hidden; 
+}
+.brand-link.text-center img { 
+  transition: all 0.3s ease; 
+}
+.sidebar-collapse .brand-link.text-center { 
+  padding: 10px 0 !important; 
+}
+.sidebar-collapse .brand-link.text-center img { 
+  width: 35px !important; 
+  height: 35px !important; 
+}
+
+/* Make overlayScrollbars always visible */
+.os-scrollbar { 
+  opacity: 1 !important; 
+  visibility: visible !important; 
+}
+.os-scrollbar-handle { 
+  background: rgba(93,173,226,0.4) !important; 
+}
+.sidebar { 
+  height: calc(100vh - 120px) !important; 
+}
+.nav-sidebar { 
+  padding-bottom: 30px !important; 
+}
+
+/* ===== Fix Scrollbar: ປິດ scroll ຂອງ body ແລະ content-wrapper, ໃຫ້ iframe scroll ດຽວ ===== */
+html, body { 
+  overflow: hidden !important; 
+  height: 100% !important; 
+}
+.wrapper { 
+  height: 100vh !important; 
+  overflow: hidden !important; 
+}
+.content-wrapper { 
+  overflow: hidden !important; 
+  padding: 0 !important; 
+  height: calc(100vh - 57px) !important; 
+}
+.content-wrapper iframe { 
+  display: block; 
+  width: 100%; 
+  height: 100%; 
+  border: 0; 
+  overflow: auto; 
+}
+
+/* ===== Mobile Screens (max-width: 991px) ===== */
+@media (max-width: 991px) {
+  .main-header {
+     position: fixed !important;
+     top: 0 !important;
+     right: 0 !important;
+     left: 0 !important;
+     z-index: 1030 !important;
+  }
+  .content-wrapper {
+     margin-top: 57px !important;
+  }
+}
+
+/* ===== Tablet & Mobile (max-width: 768px) ===== */
+@media (max-width: 768px) {
+  html { 
+    font-size: 14px !important; 
+  }
+  .brand-text { 
+    font-size: 0.9rem !important; 
+    font-weight: 700; 
+  }
+  .nav-sidebar .nav-link p { 
+    font-size: 0.85rem !important; 
+  }
+  .main-header .navbar-nav .nav-link { 
+    font-size: 0.85rem !important; 
+  }
+  .brand-link img { 
+    width: 50px !important; 
+    height: 50px !important; 
+  }
+  .user-panel .info a { 
+    font-size: 0.8rem !important; 
+  }
+}
+
+/* ===== Light Blue Theme for Navbar ===== */
+.main-header.navbar {
+  background: linear-gradient(135deg, #029affff 0%, #0099ffff 100%) !important;
+  border-bottom: 2px solid #3498DB !important;
+  box-shadow: 0 2px 8px rgba(93,173,226,0.3) !important;
+}
+.main-header .nav-link,
+.main-header .navbar-nav .nav-link {
+  color: #ffffff !important;
+}
+.main-header .nav-link:hover,
+.main-header .navbar-nav .nav-link:hover {
+  color: #EBF5FB !important;
+  background-color: rgba(255,255,255,0.15) !important;
+  border-radius: 6px;
+}
+.main-header .dropdown-toggle { 
+  color: #ffffff !important; 
+}
+.main-header .navbar-nav .fas.fa-crown { 
+  color: #F9E79F !important; 
+}
+
+/* ===== Light Blue Theme for Sidebar ===== */
+.main-sidebar {
+  background: linear-gradient(180deg, #0099ffff 0%, #0099ffff 50%, #009dffff 100%) !important;
+  box-shadow: 3px 0 12px rgba(46,134,193,0.3) !important;
+}
+.main-sidebar .brand-link {
+  background: rgba(0,0,0,0.08) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.15) !important;
+}
+.main-sidebar .brand-link .brand-text {
+  color: #ffffff !important;
+}
+.main-sidebar .sidebar .nav-link {
+  color: rgba(255,255,255,0.85) !important;
+  border-radius: 8px !important;
+  margin: 2px 8px !important;
+  padding: 10px 12px !important;
+  transition: all 0.25s ease !important;
+}
+.main-sidebar .sidebar .nav-link:hover {
+  background-color: rgba(255,255,255,0.15) !important;
+  color: #ffffff !important;
+}
+.main-sidebar .sidebar .nav-link.active {
+  background: linear-gradient(135deg, #5DADE2, #85C1E9) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(93,173,226,0.4) !important;
+}
+.nav-sidebar > .nav-item > .nav-link.active {
+  background: linear-gradient(135deg, #5DADE2, #85C1E9) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(93,173,226,0.4) !important;
+}
+.main-sidebar .nav-icon { 
+  color: rgba(255,255,255,0.7) !important; 
+}
+.main-sidebar .nav-link:hover .nav-icon,
+.main-sidebar .nav-link.active .nav-icon { 
+  color: #ffffff !important; 
+}
+.main-sidebar .nav-treeview { 
+  background: rgba(0,0,0,0.08) !important; 
+  border-radius: 6px !important; 
+  margin: 2px 8px !important; 
+}
+.main-sidebar .nav-treeview .nav-link { 
+  padding-left: 20px !important; 
+  font-size: 0.92em; 
+}
+.main-sidebar .nav-header { 
+  color: rgba(255,255,255,0.5) !important; 
+}
+.dropdown-item, .dropdown-toggle { 
+  cursor: pointer !important; 
+}

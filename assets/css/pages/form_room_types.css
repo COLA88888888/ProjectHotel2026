@@ -1,0 +1,36 @@
+body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 20px; font-size: 0.9rem; }
+
+/* Table compact styles */
+.table { font-size: 0.82rem !important; }
+.table thead th { font-size: 0.78rem !important; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 8px !important; }
+.table tbody td { padding: 8px 8px !important; vertical-align: middle !important; }
+
+/* Prevent unnecessary scrollbar on desktop */
+@media (min-width: 768px) {
+    .table-responsive { overflow-x: hidden !important; }
+}
+
+#roomTypeTable .btn-warning { background: transparent !important; border: none !important; color: #ffc107 !important; font-size: 1rem !important; padding: 0 6px !important; box-shadow: none !important; }
+#roomTypeTable .btn-danger { background: transparent !important; border: none !important; color: #dc3545 !important; font-size: 1rem !important; padding: 0 6px !important; box-shadow: none !important; }
+#roomTypeTable .btn-warning:hover, #roomTypeTable .btn-danger:hover { opacity: 0.7; }
+
+/* Pagination styling and right alignment */
+div.dataTables_wrapper div.dataTables_paginate {
+    margin: 0;
+    white-space: nowrap;
+    text-align: right !important;
+}
+div.dataTables_wrapper div.dataTables_paginate ul.pagination {
+    margin: 2px 0;
+    white-space: nowrap;
+    justify-content: flex-end !important;
+}
+@media screen and (max-width: 767px) {
+    div.dataTables_wrapper div.dataTables_info,
+    div.dataTables_wrapper div.dataTables_paginate {
+        text-align: center !important;
+    }
+    div.dataTables_wrapper div.dataTables_paginate ul.pagination {
+        justify-content: center !important;
+    }
+}

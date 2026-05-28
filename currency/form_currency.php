@@ -171,27 +171,7 @@ $symbol_col = "symbol_" . $current_lang;
     <link rel="stylesheet" href="../sweetalert/dist/sweetalert2.min.css">
     <!-- Noto Sans Lao Looped -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { 
-            font-family: 'Noto Sans Lao Looped', sans-serif !important; 
-            background-color: #f4f6f9; 
-            padding: 20px; 
-        }
-        .card { border-radius: 8px; box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2); }
-        .card-header { background-color: #fff; border-bottom: 1px solid rgba(0,0,0,.125); }
-        .btn-sm { border-radius: 4px; }
-        .table thead th { border-top: 0; border-bottom: 2px solid #dee2e6; background-color: #f8f9fa; }
-        .badge { font-size: 0.9rem; padding: 0.4em 0.6em; }
-        
-        /* Action buttons style */
-        .btn-action { margin: 0 2px; }
-        
-        @media (max-width: 576px) {
-            body { padding: 10px; }
-            h2 { font-size: 1.5rem; }
-            .card-title { font-size: 1.1rem; }
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/pages/form_currency.css">
 </head>
 <body>
 

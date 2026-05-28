@@ -76,62 +76,7 @@ $grand_total = $food_subtotal + $tax_amount;
     <title>ບິນຄ່າອາຫານ - Room <?php echo $booking['room_number']; ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;600;700&family=Noto+Sans+Lao+Looped:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../plugins/fontawesome-free/css/all.min.css">
-    <style>
-        body { 
-            font-family: 'Noto Sans Lao', 'Noto Sans Lao Looped', 'Phetsarath OT', sans-serif; 
-            font-size: 13px; 
-            margin: 0; 
-            padding: 0; 
-            color: #000; 
-            background: #f4f4f4; 
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        .receipt { 
-            width: 100%; 
-            max-width: 75mm; 
-            margin: 10px auto; 
-            background: #fff; 
-            padding: 5mm; 
-            box-sizing: border-box; 
-            box-shadow: 0 0 10px rgba(0,0,0,0.1); 
-        }
-        .header { text-align: center; margin-bottom: 10px; }
-        .hotel-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; color: #000; }
-        .divider { border-top: 1.5px dashed #000; margin: 8px 0; }
-        .info-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px; line-height: 1.4; color: #000; }
-        .item-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; color: #000; }
-        .item-table th { border-bottom: 1.5px dashed #000; text-align: left; padding: 6px 0; color: #000; font-weight: 700; }
-        .item-table td { padding: 8px 0; vertical-align: top; border-bottom: 1px dashed #ddd; color: #000; }
-        .text-right { text-align: right; }
-        .grand-total { font-size: 16px; font-weight: 700; border-top: 1.5px solid #000; padding-top: 6px; margin-top: 6px; color: #000; }
-        .footer { text-align: center; margin-top: 15px; font-size: 11px; line-height: 1.4; color: #000; font-weight: 500; }
-        @media print {
-            * {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color: #000 !important;
-                text-shadow: none !important;
-                box-shadow: none !important;
-            }
-            body { background: none; }
-            .receipt { max-width: 100%; width: 100%; padding: 0; margin: 0; box-shadow: none; }
-            .no-print { display: none; }
-        }
-        .btn-print {
-            display: inline-block;
-            padding: 8px 20px;
-            background: #28a745;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            margin: 10px;
-            cursor: pointer;
-            border: none;
-            font-family: 'Noto Sans Lao', 'Noto Sans Lao Looped', sans-serif;
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/pages/print_service_only.css">
 </head>
 <body>
 

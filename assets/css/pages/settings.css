@@ -1,0 +1,26 @@
+*:not(.fas):not(.far):not(.fab):not(.fa) { font-family: 'Noto Sans Lao Looped', sans-serif !important; }
+body { background-color: #f4f6f9; padding: 20px; }
+.logo-preview { width: 120px; height: 120px; object-fit: contain; border: 1px solid #ddd; padding: 5px; border-radius: 10px; background: white; }
+.nav-tabs .nav-link.active { font-weight: bold; color: #007bff !important; border-top: 3px solid #007bff; }
+
+@media (max-width: 768px) {
+    body { padding: 10px; }
+    h3 { font-size: 1.35rem !important; margin-bottom: 12px !important; }
+    .nav-tabs { display: flex; flex-direction: column; border-bottom: none !important; }
+    .nav-item { width: 100%; margin-bottom: 2px; }
+    .nav-tabs .nav-link { 
+        border-radius: 8px !important; 
+        border: 1px solid #dee2e6 !important; 
+        margin-bottom: 2px;
+        font-size: 0.88rem !important; 
+        padding: 10px 15px !important;
+    }
+    .nav-tabs .nav-link.active { 
+        border-top: 1px solid #dee2e6 !important; 
+        border-left: 4px solid #007bff !important; 
+        background-color: #eef5fc !important; 
+    }
+    label { font-size: 0.9rem !important; }
+    .form-control { font-size: 0.9rem !important; }
+    .btn { font-size: 0.9rem !important; }
+}

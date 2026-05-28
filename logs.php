@@ -217,18 +217,7 @@ $logs = $stmt->fetchAll();
     <link rel="stylesheet" href="plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
     <!-- AdminLTE -->
     <link rel="stylesheet" href="dist/css/adminlte.min.css">
-    <!-- Noto Sans Lao Looped -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; }
-        .table th, .table td { font-size: 0.85rem !important; vertical-align: middle; }
-        .dataTables_wrapper { font-size: 0.85rem !important; }
-        .dataTables_empty { font-size: 0.85rem !important; }
-        .log-action { font-weight: 700; color: #007bff; font-size: 0.85rem !important; }
-        .log-details { font-size: 0.85rem !important; color: #666; }
-        .log-time { font-size: 0.8rem !important; color: #888; }
-        .user-badge { font-size: 0.7rem !important; vertical-align: middle; }
-    </style>
+    <link rel="stylesheet" href="assets/css/pages/logs.css">
 </head>
 <body class="p-3">
 

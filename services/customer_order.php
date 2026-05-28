@@ -60,21 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_order'])) {
     <title>ສັ່ງອາຫານ - Room Service</title>
     <link rel="stylesheet" href="../dist/css/adminlte.min.css">
     <link rel="stylesheet" href="../plugins/fontawesome-free/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Noto Sans Lao Looped', sans-serif; background-color: #f8f9fa; }
-        .menu-header { background: linear-gradient(135deg, #2c3e50, #34495e); color: white; padding: 30px 20px; text-align: center; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; margin-bottom: 20px; }
-        .product-card { border: none; border-radius: 15px; overflow: hidden; transition: transform 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .product-card:active { transform: scale(0.98); }
-        .product-img { height: 120px; object-fit: cover; background: #eee; width: 100%; }
-        .price-tag { color: #e67e22; font-weight: bold; font-size: 1.1rem; }
-        .cart-fab { position: fixed; bottom: 30px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: #27ae60; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 5px 20px rgba(39, 174, 96, 0.4); z-index: 1000; border: none; }
-        .cart-count { position: absolute; top: -5px; right: -5px; background: #c0392b; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
-        .category-tab { padding: 8px 20px; border-radius: 20px; background: white; margin-right: 10px; display: inline-block; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.05); color: #555; }
-        .category-tab.active { background: #3498db; color: white; }
-        .category-scroll { overflow-x: auto; white-space: nowrap; padding: 10px 0; -webkit-overflow-scrolling: touch; }
-        .category-scroll::-webkit-scrollbar { display: none; }
-    </style>
+    <link rel="stylesheet" href="../assets/css/pages/customer_order.css">
 </head>
 <body>
 

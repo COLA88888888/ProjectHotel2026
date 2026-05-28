@@ -2,6 +2,7 @@
 require_once '../config/session_check.php';
 enforcePermission('checkout');
 require_once '../config/db.php';
+$is_decimal_curr = in_array($defCurr['currency_code'] ?? 'LAK', ['USD', 'CNY', 'EUR']);
 
 // --- 1. ສ່ວນໂຫຼດໄຟລ໌ພາສາ ແລະ ຕັ້ງຄ່າ Session (Checkout Language Loader) ---
 // ກວດສອບ ແລະ ດຶງພາສາປັດຈຸບັນຂອງລະບົບຈາກ Session, ຫາກບໍ່ມີໃຫ້ເລືອກພາສາລາວ 'la' ເປັນພາສາເລີ່ມຕົ້ນ
@@ -109,82 +110,12 @@ if (isset($_GET['booking_id'])) {
     <!-- Bootstrap 4 -->
     <link rel="stylesheet" href="../plugins/bootstrap/css/bootstrap.min.css">
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="../plugins/fontawesome-free-5.15.3-web/css/all.min.css">
+    <link rel="stylesheet" href="../plugins/fontawesome-free/css/all.min.css">
     <!-- AdminLTE -->
     <link rel="stylesheet" href="../dist/css/adminlte.min.css">
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="../sweetalert/dist/sweetalert2.min.css">
-    <!-- Noto Sans Lao Looped -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 20px; }
-        .invoice-title { font-size: 1.5rem; font-weight: bold; border-bottom: 2px solid #28a745; padding-bottom: 10px; margin-bottom: 20px; }
-        .total-row { font-size: 1.25rem; font-weight: bold; background-color: #f8f9fa; }
-        .grand-total { font-size: 1.5rem; font-weight: bold; color: #dc3545; }
-        
-        /* Modern Scrollbar for Room List */
-        #room_list_container {
-            max-height: calc(100vh - 230px);
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding-right: 5px;
-        }
-        
-        #room_list_container::-webkit-scrollbar {
-            width: 6px;
-        }
-        #room_list_container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        #room_list_container::-webkit-scrollbar-thumb {
-            background: #cbd5e0;
-            border-radius: 10px;
-            transition: background 0.3s;
-        }
-        #room_list_container::-webkit-scrollbar-thumb:hover {
-            background: #a0aec0;
-        }
-
-        .room-item a {
-            transition: all 0.2s;
-            margin: 2px 5px;
-            border-radius: 8px !important;
-        }
-        .room-item a:hover {
-            background-color: #eef2f7 !important;
-            transform: translateX(3px);
-        }
-        .room-item a.active {
-            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
-            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
-            transform: none !important;
-        }
-        
-        @media (max-width: 768px) {
-            body { padding: 8px; }
-            h2 { font-size: 1.1rem !important; }
-            h3 { font-size: 1rem !important; }
-            h4 { font-size: 0.9rem !important; }
-            h5 { font-size: 0.85rem !important; }
-            .invoice-title { font-size: 1rem; margin-bottom: 10px; }
-            .total-row { font-size: 0.95rem; }
-            .grand-total { font-size: 1.1rem; }
-            .card-title { font-size: 0.9rem !important; }
-            .table-responsive { font-size: 0.75rem !important; }
-            .btn-lg { padding: 6px 12px; font-size: 0.9rem; }
-            #room_list_container { max-height: 300px; }
-            
-            /* Specific fixes for screenshot */
-            .room-num { font-size: 0.95rem; }
-            .guest-name { font-size: 0.8rem; }
-            .display-4 { font-size: 1.8rem !important; } /* For 'ຫ້ອງ 203' */
-            .btn-choose { font-size: 0.8rem; padding: 5px 10px; }
-            .info-row { font-size: 0.85rem; }
-            .table th, .table td { padding: 6px !important; }
-            .input-group-text, .form-control { font-size: 0.85rem !important; }
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/pages/checkout.css">
     <script>
         // Guard: If not in iframe, redirect to menu_admin
         if (window.top === window.self) {

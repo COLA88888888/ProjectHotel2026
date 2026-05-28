@@ -67,70 +67,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="../sweetalert/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="../assets/css/pages/walkin.css">
     <script>
         if (window.top === window.self) { window.location.href = '../menu_admin.php'; }
     </script>
-    <style>
-        *:not(.fas):not(.far):not(.fab):not(.fa) { font-family: 'Noto Sans Lao Looped', sans-serif !important; }
-        .fas, .far, .fab, .fa { font-family: "Font Awesome 5 Free" !important; font-weight: 900 !important; }
-        body { background-color: #f8f9fa; padding: 20px; }
-        
-        .room-card { 
-            border: 1px solid #dee2e6 !important;
-            border-radius: 12px !important;
-            transition: all 0.2s;
-            background: #fff;
-            height: 100%;
-        }
-        .room-card:hover { 
-            border-color: #007bff !important;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08) !important;
-        }
-        
-        .room-card-body {
-            padding: 20px;
-            text-align: center;
-        }
-        
-        .room-icon-wrapper {
-            font-size: 2.5rem;
-            color: #28a745;
-            margin-bottom: 10px;
-        }
-        
-        .room-number {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 5px;
-        }
-        
-        .room-type {
-            font-size: 0.9rem;
-            color: #6c757d;
-            margin-bottom: 15px;
-        }
-        
-        .room-price { 
-            font-size: 1.25rem; 
-            font-weight: 700; 
-            color: #28a745;
-        }
-        
-        .btn-choose {
-            border-radius: 0 0 12px 12px !important;
-            padding: 10px;
-            font-weight: 600;
-        }
-        
-        @media (max-width: 768px) {
-            body { padding: 10px; }
-            .room-header { padding: 20px 10px; }
-            .room-icon { font-size: 2.2rem; }
-            .room-number-badge { font-size: 1.2rem; }
-            .room-price { font-size: 1.1rem; }
-        }
-    </style>
 </head>
 <body>
 

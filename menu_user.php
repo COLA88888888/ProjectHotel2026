@@ -53,6 +53,9 @@ try {
         $expiry = new DateTime($pkg_expires);
         $interval = $today->diff($expiry);
         $days_remaining = (int)$interval->format('%r%a');
+        if ($days_remaining < 0) {
+            $days_remaining = 0;
+        }
         $pkg_status_text = sprintf($lang['package_status_remaining'] ?? 'ເຫຼືອ %s ວັນ', $days_remaining);
     }
 } catch (Exception $e) {
@@ -68,113 +71,14 @@ $nav_img_path = 'assets/img/' . $session_img;
 if (!file_exists($nav_img_path)) {
     $nav_img_path = 'UserImg/default.png';
 }
+
 $perms = json_decode($_SESSION['permissions'] ?? '[]', true);
 $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
 ?>
 <html>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;700&display=swap" rel="stylesheet">
-<style>
-  *:not(.fas):not(.far):not(.fab):not(.fa) { font-family: 'Noto Sans Lao Looped', sans-serif !important; }
-  .fas, .far, .fab, .fa { font-family: "Font Awesome 5 Free" !important; font-weight: 900 !important; }
- html, body, .nav-link, .brand-text, h1, h2, h3, h4, h5, h6, .btn, .form-control, .card-title { 
-    font-family: 'Noto Sans Lao Looped', sans-serif !important; 
- }
- .nav-sidebar .menu-is-opening > .nav-link p > .right.fa-angle-right,
- .nav-sidebar .menu-open > .nav-link p > .right.fa-angle-right {
-   transform: rotate(90deg) !important;
- }
- .brand-link.text-center { transition: padding 0.3s ease; overflow: hidden; }
- .brand-link.text-center img { transition: all 0.3s ease; }
- .sidebar-collapse .brand-link.text-center { padding: 10px 0 !important; }
- .sidebar-collapse .brand-link.text-center img { width: 35px !important; height: 35px !important; }
- /* Make overlayScrollbars always visible */
- .os-scrollbar { opacity: 1 !important; visibility: visible !important; }
- .os-scrollbar-handle { background: rgba(93,173,226,0.4) !important; }
- .sidebar { height: calc(100vh - 240px) !important; }
- .nav-sidebar { padding-bottom: 30px !important; }
-
- /* ===== Fix Scrollbar: ປິດ scroll ຂອງ body ແລະ content-wrapper, ໃຫ້ iframe scroll ດຽວ ===== */
- html, body { overflow: hidden !important; height: 100% !important; }
- .wrapper { height: 100vh !important; overflow: hidden !important; }
- .content-wrapper { overflow: hidden !important; padding: 0 !important; height: calc(100vh - 57px) !important; }
-  .content-wrapper iframe { display: block; width: 100%; height: 100%; border: 0; overflow: auto; }
- 
-  @media (max-width: 768px) {
-     html { font-size: 14px !important; }
-     .brand-text { font-size: 0.9rem !important; font-weight: 700; }
-     .nav-sidebar .nav-link p { font-size: 0.85rem !important; }
-     .main-header .navbar-nav .nav-link { font-size: 0.85rem !important; }
-     .brand-link img { width: 50px !important; height: 50px !important; }
-     .user-panel .info a { font-size: 0.8rem !important; }
-  }
-
- /* ===== Light Blue Theme for Navbar ===== */
- .main-header.navbar {
-   background: linear-gradient(135deg, #029affff 0%, #0099ffff 100%) !important;
-   border-bottom: 2px solid #3498DB !important;
-   box-shadow: 0 2px 8px rgba(93,173,226,0.3) !important;
- }
- .main-header .nav-link,
- .main-header .navbar-nav .nav-link {
-   color: #ffffff !important;
- }
- .main-header .nav-link:hover,
- .main-header .navbar-nav .nav-link:hover {
-   color: #EBF5FB !important;
-   background-color: rgba(255,255,255,0.15) !important;
-   border-radius: 6px;
- }
- .main-header .dropdown-toggle { color: #ffffff !important; }
- .main-header .navbar-nav .fas.fa-crown { color: #F9E79F !important; }
-
- /* ===== Light Blue Theme for Sidebar ===== */
- .main-sidebar {
-   background: linear-gradient(180deg, #0099ffff 0%, #0099ffff 50%, #009dffff 100%) !important;
-   box-shadow: 3px 0 12px rgba(46,134,193,0.3) !important;
- }
- .main-sidebar .brand-link {
-   background: rgba(0,0,0,0.08) !important;
-   border-bottom: 1px solid rgba(255,255,255,0.15) !important;
- }
- .main-sidebar .brand-link .brand-text {
-   color: #ffffff !important;
- }
- .main-sidebar .sidebar .nav-link {
-   color: rgba(255,255,255,0.85) !important;
-   border-radius: 8px !important;
-   margin: 2px 8px !important;
-   padding: 10px 12px !important;
-   transition: all 0.25s ease !important;
- }
- .main-sidebar .sidebar .nav-link:hover {
-   background-color: rgba(255,255,255,0.15) !important;
-   color: #ffffff !important;
- }
- .main-sidebar .sidebar .nav-link.active {
-   background: linear-gradient(135deg, #5DADE2, #85C1E9) !important;
-   color: #ffffff !important;
-   box-shadow: 0 3px 8px rgba(93,173,226,0.4) !important;
- }
- .nav-sidebar > .nav-item > .nav-link.active {
-   background: linear-gradient(135deg, #5DADE2, #85C1E9) !important;
-   color: #ffffff !important;
-   box-shadow: 0 3px 8px rgba(93,173,226,0.4) !important;
- }
- .main-sidebar .nav-icon { color: rgba(255,255,255,0.7) !important; }
- .main-sidebar .nav-link:hover .nav-icon,
- .main-sidebar .nav-link.active .nav-icon { color: #ffffff !important; }
- .main-sidebar .nav-treeview { background: rgba(0,0,0,0.08) !important; border-radius: 6px !important; margin: 2px 8px !important; }
- .main-sidebar .nav-treeview .nav-link { padding-left: 20px !important; font-size: 0.92em; }
- .main-sidebar .nav-header { color: rgba(255,255,255,0.5) !important; }
- .dropdown-item, .dropdown-toggle { cursor: pointer !important; }
-  @media (max-width: 768px) {
-     .brand-text { font-size: 0.85rem !important; }
-     .nav-sidebar .nav-link p { font-size: 0.8rem !important; }
-     .main-header .navbar-nav .nav-link { font-size: 0.8rem !important; }
-     .brand-link img { width: 50px !important; height: 50px !important; }
-  }
-</style>
 <head>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/menu_layout.css">
 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -188,19 +92,14 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
   <link rel="stylesheet" href="plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
   <!-- iCheck -->
   <link rel="stylesheet" href="plugins/icheck-bootstrap/icheck-bootstrap.min.css">
-  <!-- JQVMap -->
-  <link rel="stylesheet" href="plugins/jqvmap/jqvmap.min.css">
   <!-- Theme style -->
   <link rel="stylesheet" href="dist/css/adminlte.min.css">
   <!-- overlayScrollbars -->
   <link rel="stylesheet" href="plugins/overlayScrollbars/css/OverlayScrollbars.min.css">
   <!-- Daterange picker -->
   <link rel="stylesheet" href="plugins/daterangepicker/daterangepicker.css">
-  <!-- summernote -->
-  <link rel="stylesheet" href="plugins/summernote/summernote-bs4.min.css">
 	<script src="sweetalert/dist/sweetalert2.all.min.js"></script>		
 	<script src="plugins/jquery/jquery.min.js"></script>
-</head>
 <body class="hold-transition sidebar-mini sidebar-no-expand layout-fixed">
 <div class="wrapper">
 
@@ -220,10 +119,10 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
     <!-- Right navbar links -->
     <ul class="navbar-nav ml-auto">
       <!-- Package Info Badge (PC Only) -->
-      <?php if ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ'): ?>
+      <?php if ($_SESSION['status'] === 'GUIVIP' || $_SESSION['status'] === 'ຜູ້ບໍລິຫານ'): ?>
       <li class="nav-item d-none d-md-flex align-items-center mr-3">
-          <span class="badge py-2 px-3 rounded-pill shadow-sm" style="background: linear-gradient(135deg, #f39c12 0%, #f1c40f 100%); color: #1e272e; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.2);">
-              <i class="fas fa-crown text-danger animate-pulse"></i>
+          <span style="color: #ffffff; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fas fa-circle animate-pulse" style="font-size: 11px; color: #2ecc71;"></i>
               <span><?php echo $lang['package_usage'] ?? 'ເເພັກເກັດນຳໃຊ້'; ?>: <?php echo $pkg_status_text; ?></span>
           </span>
       </li>
@@ -249,7 +148,7 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
         </div>
       </li>
 
-      <li class="nav-item">
+      <li class="nav-item d-none d-sm-inline-block">
         <a class="nav-link" data-widget="fullscreen" href="#" role="button">
           <i class="fas fa-expand-arrows-alt"></i>
         </a>
@@ -257,7 +156,7 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
 
       <!-- Usage Package -->
       <?php if ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ'): ?>
-      <li class="nav-item">
+      <li class="nav-item d-none d-md-inline-block">
         <a class="nav-link" href="#" role="button" style="color: #28a745; font-weight: bold;">
           <i class="fas fa-crown"></i> ແພັກເກັດການນຳໃຊ້
         </a>
@@ -284,8 +183,8 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
 
       <li class="dropdown dropdown-user">
           <a class="nav-link dropdown-toggle link " data-toggle="dropdown">
-            <img src="<?php echo $nav_img_path; ?>" height="30px" width="30px" class="rounded-circle mr-2" style="object-fit: cover; border: 1px solid rgba(255,255,255,0.5);">
-            <span><?php echo $_SESSION['fname']; ?></span>
+            <img src="<?php echo $nav_img_path; ?>" height="30px" width="30px" class="rounded-circle mr-sm-2" style="object-fit: cover; border: 1px solid rgba(255,255,255,0.5);">
+            <span class="d-none d-sm-inline-block"><?php echo $_SESSION['fname']; ?></span>
           </a>
           <ul class="dropdown-menu dropdown-menu-right shadow-lg border-0" style="width: 220px; border-radius: 12px; margin-top: 10px;">
               <li class="dropdown-header text-center p-3 border-bottom mb-2 bg-light" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
@@ -390,29 +289,63 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
           <li class="nav-header text-uppercase" style="color: rgba(255,255,255,0.5); font-size: 0.7rem; letter-spacing: 1.5px; padding-top: 20px;"><?php echo $lang['management_and_reports']; ?></li>
           <?php if($is_admin || in_array('report', $perms)): ?>
           <li class="nav-item">
-            <a href="reports/report.php" target="frame" class="nav-link">
-              <i class="nav-icon fas fa-chart-bar"></i>
-              <p><?php echo $lang['financial_report']; ?></p>
+            <a href="#" class="nav-link">
+              <i class="nav-icon fas fa-chart-bar text-info"></i>
+              <p>
+                 ລາຍງານ
+                 <i class="fas fa-angle-right right"></i>
+              </p>
             </a>
-          </li>
-
-          <li class="nav-item">
-            <a href="reports/report_pos_history.php" target="frame" class="nav-link">
-              <i class="nav-icon fas fa-shopping-cart"></i>
-              <p><?php echo $lang['pos_history'] ?? 'ປະຫວັດການຂາຍ POS'; ?></p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="reports/report_checkin_checkout.php" target="frame" class="nav-link">
-              <i class="nav-icon fas fa-exchange-alt"></i>
-              <p><?php echo $lang['checkin_checkout_report']; ?></p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="reports/expenses.php" target="frame" class="nav-link">
-              <i class="nav-icon fas fa-file-invoice-dollar"></i>
-              <p><?php echo $lang['expenses_management']; ?></p>
-            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="reports/report.php" target="frame" class="nav-link">
+                  <i class="fas fa-file-invoice-dollar nav-icon text-danger"></i>
+                  <p>ລາຍງານການເງິນ ແລະ ກຳໄລ</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="reports/report_sales.php" target="frame" class="nav-link">
+                  <i class="fas fa-chart-line nav-icon text-success"></i>
+                  <p>ລາຍງານການຂາຍ</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="reports/report_checkin_checkout.php" target="frame" class="nav-link">
+                  <i class="fas fa-key nav-icon text-primary"></i>
+                  <p>ລາຍງານການເຂົ້າພັກ</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="reports/report_room_popularity.php" target="frame" class="nav-link">
+                  <i class="fas fa-door-open nav-icon text-warning"></i>
+                  <p>ປະເພດຫ້ອງຈອງຫຼາຍ</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="reports/report_services.php" target="frame" class="nav-link">
+                  <i class="fas fa-utensils nav-icon text-success"></i>
+                  <p>ລາຍງານບໍລິການເພີ່ມເຕີມ</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="reports/expenses.php" target="frame" class="nav-link">
+                  <i class="fas fa-receipt nav-icon text-info"></i>
+                  <p>ຈັດການລາຍຈ່າຍ</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="products/stock.php" target="frame" class="nav-link">
+                  <i class="fas fa-boxes nav-icon text-light"></i>
+                  <p>ລາຍງານສະຕ໋ອກ</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="reports/report_pos_history.php" target="frame" class="nav-link">
+                  <i class="fas fa-shopping-cart nav-icon text-muted"></i>
+                  <p>ປະຫວັດການຂາຍ POS</p>
+                </a>
+              </li>
+            </ul>
           </li>
           <?php endif; ?>
           <?php if($is_admin || in_array('rooms', $perms)): ?>
@@ -540,8 +473,6 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
 <script src="plugins/daterangepicker/daterangepicker.js"></script>
 <!-- Tempusdominus Bootstrap 4 -->
 <script src="plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
-<!-- Summernote -->
-<script src="plugins/summernote/summernote-bs4.min.js"></script>
 <!-- overlayScrollbars -->
 <script src="plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
 <!-- AdminLTE App -->
@@ -696,6 +627,36 @@ $('.lang-dropdown-item').on('click', function(e) {
   var lang = $(this).data('lang');
   window.location.href = '?lang=' + lang;
 });
+
+// Auto-logout due to inactivity on the front-end (15 minutes)
+(function() {
+    var idleTime = 0;
+    var idleInterval = setInterval(timerIncrement, 60000); // Check every 1 minute
+
+    // Reset idle timer on main page activity
+    $(document).on('mousemove keypress click scroll', function() {
+        idleTime = 0;
+    });
+
+    // Reset idle timer on iframe activity
+    $('iframe[name="frame"]').on('load', function() {
+        try {
+            var iframeDoc = this.contentDocument || this.contentWindow.document;
+            $(iframeDoc).on('mousemove keypress click scroll', function() {
+                idleTime = 0;
+            });
+        } catch (e) {
+            // Bypass cross-origin block if any
+        }
+    });
+
+    function timerIncrement() {
+        idleTime++;
+        if (idleTime >= 15) { // 15 minutes
+            window.location.href = 'logout.php?timeout=1';
+        }
+    }
+})();
 </script>
 </body>
 </html>

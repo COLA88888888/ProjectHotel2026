@@ -1,0 +1,11 @@
+body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 20px; }
+@media (max-width: 768px) {
+    body { padding: 10px; }
+    h2 { font-size: 1.3rem !important; }
+    h4 { font-size: 1rem !important; }
+    .card-title { font-size: 1rem !important; }
+    .card-body { padding: 10px; }
+    .form-group label { font-size: 0.9rem; }
+    .form-control { font-size: 0.9rem; height: calc(2rem + 2px); }
+    .btn { font-size: 0.9rem; }
+}

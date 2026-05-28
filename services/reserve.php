@@ -303,59 +303,7 @@ $reservations = $stmtReserved->fetchAll();
     <link rel="stylesheet" href="../dist/css/adminlte.min.css">
     <link rel="stylesheet" href="../plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="../sweetalert/dist/sweetalert2.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        .dataTables_filter { display: none; }
-        body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 10px; }
-        .room-card { transition: transform 0.2s; border-radius: 10px; }
-        .room-card:hover { transform: scale(1.02); cursor: pointer; border-color: #f39c12; }
-        .room-price { font-size: 1.1rem; font-weight: 600; color: #f39c12; }
-        .btn-action-group { 
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            align-items: center;
-        }
-        .btn-action-group .btn { 
-            background: transparent !important;
-            border: none !important;
-            padding: 0;
-            width: auto;
-            height: auto;
-            box-shadow: none !important;
-            font-size: 1.1rem;
-            transition: opacity 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            line-height: 1;
-        }
-        .btn-action-group .btn span {
-            font-size: 0.65rem;
-            font-weight: 600;
-            margin-top: 2px;
-            white-space: nowrap;
-        }
-        .btn-action-group .btn:hover { opacity: 0.7; }
-        .btn-action-group .btn-success { color: #28a745 !important; }
-        .btn-action-group .btn-primary { color: #007bff !important; }
-        .btn-action-group .btn-info { color: #17a2b8 !important; }
-        .btn-action-group .btn-danger { color: #dc3545 !important; }
-        @media (max-width: 768px) {
-            body { padding: 5px; }
-            h2 { font-size: 1.1rem !important; }
-            h3 { font-size: 1rem !important; }
-            .room-card .display-4 { font-size: 1.5rem; }
-            .room-card h4 { font-size: 0.9rem; }
-            .table { font-size: 0.75rem !important; }
-            .table th, .table td { padding: 6px 4px !important; }
-            .card-header { padding: 8px 12px !important; }
-            .card-title { font-size: 0.9rem !important; }
-            .btn-sm { padding: 0.2rem 0.4rem; font-size: 0.75rem; }
-            .form-control-sm, .input-group-sm > .form-control { font-size: 0.8rem; }
-            .stat-card-value { font-size: 1.2rem; }
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/pages/reserve.css">
     <script>
         if (window.top === window.self) { window.location.href = '../menu_admin.php'; }
     </script>
@@ -839,10 +787,7 @@ $reservations = $stmtReserved->fetchAll();
     </div>
 </div>
 
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-    *:not(.fas):not(.far):not(.fab):not(.fa) { font-family: 'Noto Sans Lao Looped', sans-serif !important; }
-</style>
+
 <script src="../plugins/jquery/jquery.min.js"></script>
 <script src="../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="../sweetalert/dist/sweetalert2.all.min.js"></script>

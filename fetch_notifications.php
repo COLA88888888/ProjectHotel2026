@@ -63,19 +63,6 @@ while ($row = $stmtService->fetch()) {
     $total_count++;
 }
 
-// 3. Today's Checkouts
-$stmtCheckout = $pdo->query("SELECT r.room_number FROM bookings b JOIN rooms r ON b.room_id = r.id WHERE b.status = 'Occupied' AND b.check_out_date = CURDATE() LIMIT 5");
-while ($row = $stmtCheckout->fetch()) {
-    $notifications[] = [
-        'type' => 'checkout',
-        'title' => 'ຮອດກຳນົດ Check-out!',
-        'text' => 'ຫ້ອງ ' . $row['room_number'] . ' ຮອດກຳນົດອອກມື້ນີ້',
-        'icon' => 'fas fa-door-closed',
-        'color' => 'text-danger',
-        'link' => 'services/checkout.php'
-    ];
-    $total_count++;
-}
 
 // 3. New Payment Confirmations (Last 15 minutes)
 $stmtPay = $pdo->query("SELECT id, room_number, amount, created_at FROM payment_notifications WHERE status = 'New' AND created_at >= NOW() - INTERVAL 15 MINUTE ORDER BY id DESC");

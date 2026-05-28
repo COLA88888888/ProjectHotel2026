@@ -16,36 +16,7 @@ $qr_api = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . url
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ພິມ QR Code ສຳລັບສັ່ງອາຫານ</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;600;700&family=Noto+Sans+Lao+Looped:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body { 
-            font-family: 'Noto Sans Lao', 'Noto Sans Lao Looped', 'Phetsarath OT', sans-serif; 
-            background-color: #f0f2f5; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            margin: 0; 
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        .print-container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; }
-        .hotel-name { font-size: 1.5rem; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
-        .qr-image { width: 100%; max-width: 250px; border: 10px solid #f8f9fa; border-radius: 15px; margin: 20px 0; }
-        .instruction { font-size: 1.1rem; color: #333; font-weight: 600; margin-bottom: 20px; }
-        .btn-print { background: #3498db; color: white; border: none; padding: 12px 30px; border-radius: 10px; font-size: 1rem; cursor: pointer; transition: 0.3s; font-family: 'Noto Sans Lao', 'Noto Sans Lao Looped', sans-serif; font-weight: bold; }
-        .btn-print:hover { background: #2980b9; }
-        @media print {
-            * {
-                color: #000 !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            .btn-print { display: none; }
-            body { background: white; }
-            .print-container { box-shadow: none; border: 2px solid #eee; }
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/pages/generate_qr.css">
 </head>
 <body>
 

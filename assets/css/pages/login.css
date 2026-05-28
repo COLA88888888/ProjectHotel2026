@@ -1,0 +1,226 @@
+*:not(.fas):not(.far):not(.fab):not(.fa) { font-family: 'Noto Sans Lao Looped', sans-serif !important; }
+.fas, .far, .fab, .fa { font-family: "Font Awesome 5 Free" !important; font-weight: 900 !important; }
+:root {
+    --primary-blue: #007bff;
+    --blue-hover: #0069d9;
+}
+body {
+    font-family: 'Noto Sans Lao Looped', sans-serif !important;
+    margin: 0;
+    background-color: #f8f9fa;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+.hero-bg {
+    background: linear-gradient(rgba(0, 123, 255, 0.7), rgba(0, 123, 255, 0.7)), url('../../img/hotel_pool.jpg');
+    background-size: cover;
+    background-position: center;
+    height: 40vh;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    clip-path: polygon(0 0, 100% 0, 100% 80%, 0 100%);
+    z-index: 1;
+}
+.login-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 10;
+    padding: 20px;
+}
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 35px 40px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    margin-top: 5vh;
+}
+.lang-switcher {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    display: flex;
+    gap: 12px;
+    z-index: 2000;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 15px;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255,255,255,0.5);
+}
+.lang-item {
+    text-decoration: none !important;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s;
+    opacity: 0.6;
+    padding: 2px;
+}
+.lang-item:hover, .lang-item.active {
+    opacity: 1;
+    transform: scale(1.1);
+}
+.lang-flag {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #ddd;
+}
+.lang-text {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #444;
+}
+.login-header {
+    text-align: center;
+    margin-bottom: 35px;
+}
+.hotel-logo-wrapper {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 15px;
+    background: #fff;
+    border-radius: 50%;
+    padding: 5px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.hotel-logo-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+.login-header h2 {
+    color: var(--primary-blue);
+    font-weight: 700;
+    font-size: 1.6rem;
+    margin-bottom: 5px;
+}
+.login-header p {
+    color: #888;
+    font-size: 0.9rem;
+}
+.form-label {
+    font-weight: 500;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    color: #444;
+}
+.form-control {
+    border-radius: 10px;
+    padding: 14px 15px;
+    border: 1px solid #dee2e6;
+    font-size: 1.1rem;
+    width: 100%;
+    display: block;
+    background-color: #f0f7ff;
+    transition: all 0.3s;
+    box-sizing: border-box;
+    height: 48px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    padding: 10px 15px;
+    transition: all 0.3s;
+}
+.form-control:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+.password-container {
+    position: relative;
+}
+.password-toggle {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #888;
+}
+.btn-login {
+    background-color: var(--primary-blue);
+    color: #fff;
+    height: 48px;
+    border-radius: 8px;
+    font-weight: 700;
+    width: 100%;
+    margin-top: 20px;
+    transition: all 0.3s;
+    border: none;
+}
+.btn-login:hover {
+    background-color: var(--blue-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+}
+
+@media (max-width: 576px) {
+    .lang-switcher {
+        top: 15px;
+        right: 15px;
+        padding: 5px 10px;
+        gap: 8px;
+    }
+    .lang-text {
+        display: none; /* Hide text on mobile to save space */
+    }
+    .lang-flag {
+        width: 26px;
+        height: 26px;
+    }
+    .login-card { 
+        padding: 30px 25px; 
+        width: 92%; 
+        max-width: 340px; 
+        margin: 0 auto; 
+        border-radius: 20px;
+    }
+    .hotel-logo-wrapper {
+        width: 65px;
+        height: 65px;
+    }
+    .login-header h2 { font-size: 1.4rem; }
+    .login-header p { font-size: 0.85rem; }
+    .form-control { height: 45px; font-size: 1rem; }
+    .btn-login { height: 45px; font-size: 1rem; }
+    .hero-bg { height: 35vh; }
+}
+.remember-me {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #666;
+}
+.remember-me input {
+    margin-right: 10px;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-blue);
+}
+.footer-info {
+    position: relative;
+    padding: 30px 0 50px; /* Increased bottom padding to move text up */
+    width: 100%;
+    text-align: center;
+    color: #999;
+    font-size: 0.85rem;
+    z-index: 1;
+}

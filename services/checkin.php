@@ -141,20 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['checkin'])) {
     <link rel="stylesheet" href="../plugins/fontawesome-free-5.15.3-web/css/all.min.css">
     <link rel="stylesheet" href="../dist/css/adminlte.min.css">
     <link rel="stylesheet" href="../sweetalert/dist/sweetalert2.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 20px; }
-        @media (max-width: 768px) {
-            body { padding: 10px; }
-            h2 { font-size: 1.3rem !important; }
-            h4 { font-size: 1rem !important; }
-            .card-title { font-size: 1rem !important; }
-            .card-body { padding: 10px; }
-            .form-group label { font-size: 0.9rem; }
-            .form-control { font-size: 0.9rem; height: calc(2rem + 2px); }
-            .btn { font-size: 0.9rem; }
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/pages/checkin.css">
 </head>
 <body>
 

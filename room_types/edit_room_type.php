@@ -73,10 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update'])) {
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="../sweetalert/dist/sweetalert2.min.css">
-    <style>
-        body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 20px; }
-        .card { border-radius: 15px; overflow: hidden; }
-    </style>
+    <link rel="stylesheet" href="../assets/css/pages/edit_room_type.css">
 </head>
 <body>
 

@@ -1,0 +1,245 @@
+/* Modern Font overrides */
+*:not(.fas):not(.far):not(.fab):not(.fa) { 
+    font-family: 'Noto Sans Lao Looped', 'Noto Sans Lao', sans-serif !important; 
+}
+body {
+    background-color: #f4f6f9;
+    padding: 20px;
+}
+
+/* Modern Cards and Glassmorphism */
+.glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05) !important;
+    transition: all 0.3s ease;
+}
+
+/* Unified Compact Micro Stat Cards */
+.micro-stat-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 12px 15px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    transition: all 0.2s ease;
+    height: 100%;
+}
+.micro-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+}
+.micro-stat-icon-wrapper {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+.micro-stat-icon-wrapper.blue { background: rgba(58, 123, 213, 0.1); color: #3a7bd5; }
+.micro-stat-icon-wrapper.green { background: rgba(17, 153, 142, 0.1); color: #11998e; }
+.micro-stat-icon-wrapper.orange { background: rgba(248, 87, 166, 0.1); color: #f857a6; }
+.micro-stat-icon-wrapper.purple { background: rgba(100, 65, 165, 0.1); color: #6441a5; }
+.micro-stat-icon-wrapper.yellow { background: rgba(253, 126, 20, 0.1); color: #fd7e14; }
+.micro-stat-icon-wrapper.teal { background: rgba(23, 162, 184, 0.1); color: #17a2b8; }
+
+.micro-stat-info {
+    display: flex;
+    flex-direction: column;
+}
+.micro-stat-label {
+    font-size: 0.72rem;
+    color: #718096;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+.micro-stat-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #1a202c;
+    line-height: 1.2;
+}
+
+/* Premium Highlights Banner */
+.highlights-banner-premium {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-radius: 12px;
+    border-left: 5px solid #fbbf24;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.15);
+    width: 100%;
+}
+.highlights-badge {
+    background: rgba(234, 179, 8, 0.15);
+    color: #fbbf24;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.highlights-text {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* Rank Badges */
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-weight: 800;
+    font-size: 0.8rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+.rank-badge-gold {
+    background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%);
+    color: #ffffff !important;
+    border: 1px solid #ffd700;
+}
+.rank-badge-silver {
+    background: linear-gradient(135deg, #f0f0f0 0%, #b0b0b0 100%);
+    color: #333333 !important;
+    border: 1px solid #e0e0e0;
+}
+.rank-badge-bronze {
+    background: linear-gradient(135deg, #df9c5e 0%, #a76b30 100%);
+    color: #ffffff !important;
+    border: 1px solid #df9c5e;
+}
+.rank-badge-normal {
+    background: #e2e8f0;
+    color: #4a5568 !important;
+    border: 1px solid #cbd5e0;
+}
+
+/* Premium Progress Share Bar */
+.progress-share-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 180px;
+    margin: 0 auto;
+}
+.progress-share {
+    flex-grow: 1;
+    height: 8px;
+    background-color: #edf2f7;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.progress-share-bar {
+    height: 100%;
+    border-radius: 10px;
+}
+.progress-share-bar.color-0 { background: linear-gradient(90deg, #3a7bd5 0%, #3a6073 100%); }
+.progress-share-bar.color-1 { background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%); }
+.progress-share-bar.color-2 { background: linear-gradient(90deg, #f857a6 0%, #ff5858 100%); }
+.progress-share-bar.color-3 { background: linear-gradient(90deg, #6441a5 0%, #2a0845 100%); }
+.progress-share-bar.color-other { background: linear-gradient(90deg, #a0aec0 0%, #4a5568 100%); }
+
+.progress-share-text {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #4a5568;
+    min-width: 35px;
+    text-align: right;
+}
+
+/* Modern Custom Nav Pills */
+.nav-pills-custom .nav-link {
+    border-radius: 30px;
+    padding: 8px 20px;
+    font-weight: 700;
+    color: #495057;
+    background-color: #e9ecef;
+    margin-right: 10px;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+.nav-pills-custom .nav-link.active {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.35);
+}
+.nav-pills-custom .nav-link:hover:not(.active) {
+    background-color: #dee2e6;
+    color: #212529;
+}
+
+/* Premium Table Customizations */
+.table-premium {
+    width: 100% !important;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.table-premium thead th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 700;
+    border-top: none;
+    border-bottom: 2px solid #dee2e6;
+    padding: 12px 15px;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+.table-premium tbody td {
+    padding: 12px 15px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f3f5;
+}
+.table-premium tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.02);
+}
+
+/* Export Buttons style */
+.btn-export {
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+.btn-export-pdf {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+}
+.btn-export-pdf:hover {
+    background-color: #e74c3c;
+    color: white;
+}
+
+/* Centered Landscape print layout configuration */
+@media print {
+    body {
+        background: white;
+        padding: 0;
+    }
+    .no-print {
+        display: none !important;
+    }
+    .card {
+        box-shadow: none !important;
+        border: none !important;
+    }
+    .table-responsive {
+        overflow: visible !important;
+    }
+}

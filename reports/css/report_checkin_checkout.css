@@ -1,0 +1,232 @@
+*:not(.fas):not(.far):not(.fab):not(.fa) { font-family: 'Noto Sans Lao Looped', sans-serif !important; }
+body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f4f6f9; padding: 20px; }
+
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #eef2f7; }
+.section-header h2 { margin: 0; font-weight: 800; color: #2c3e50; font-size: 1.5rem; }
+
+.card { border-radius: 16px !important; border: none !important; box-shadow: 0 10px 30px rgba(0,0,0,0.05) !important; }
+
+/* High contrast header */
+.card-header-custom {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 18px 24px !important;
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    color: #333;
+    font-weight: 700;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.page-link {
+    color: #1e3c72;
+    border: 1px solid #dee2e6;
+    margin: 0 2px;
+    padding: 6px 12px;
+    transition: all 0.2s;
+}
+.page-item.active .page-link {
+    background-color: #1e3c72 !important;
+    border-color: #1e3c72 !important;
+    color: #fff !important;
+}
+
+@media (max-width: 768px) {
+    body { padding: 10px; }
+    h2 { font-size: 1.4rem !important; margin-bottom: 12px !important; }
+    h3, .card-title { font-size: 1.1rem !important; }
+    label { font-size: 0.9rem !important; }
+    .form-control { font-size: 0.9rem !important; }
+    .btn-primary { font-size: 0.95rem !important; }
+    .section-header { flex-direction: column; align-items: flex-start; gap: 15px; margin-bottom: 15px; padding-bottom: 10px; }
+    .section-header h2 { font-size: 1.3rem; margin-bottom: 0; }
+    .filter-wrapper { 
+        flex-direction: column; 
+        width: 100%; 
+        gap: 12px !important; 
+        background: #fff;
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    }
+    .filter-wrapper .input-group { width: 100% !important; margin: 0 !important; }
+    .filter-wrapper button { width: 100% !important; border-radius: 8px !important; font-weight: 700; }
+}
+
+@media (max-width: 480px) {
+    .section-header h2 { font-size: 1.15rem; }
+    .card-title { font-size: 0.95rem !important; }
+}
+
+@media print {
+    body { background: #fff; padding: 0; }
+    .card { box-shadow: none !important; }
+    .card-header-custom { background: #333 !important; color: #fff !important; border-radius: 0 !important; }
+    .table-responsive { overflow: visible !important; }
+}
+
+/* Fix vertical scrollbar bug in Windows when horizontal scrollbar appears */
+.table-responsive {
+    overflow-y: hidden !important;
+}
+
+/* Compact Table Styles to prevent scrollbars */
+.table-compact th, .table-compact td {
+    padding: 0.4rem 0.5rem !important;
+    vertical-align: middle;
+}
+.table-compact {
+    font-size: 0.85rem !important;
+}
+.btn-action-group {
+    display: flex; 
+    gap: 5px; 
+    justify-content: center; 
+    align-items: center;
+}
+.btn-action-group .btn {
+    background: transparent; 
+    border: none; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
+    padding: 2px 4px;
+}
+.btn-action-group .btn i {
+    font-size: 1rem;
+}
+.btn-action-group .btn span {
+    font-size: 0.6rem; 
+    font-weight: 600; 
+    margin-top: 2px;
+}
+
+/* Export Buttons */
+.btn-export { border-radius: 6px; padding: 6px 16px; font-weight: 700; font-size: 0.85rem; }
+.btn-export-excel { background-color: #28a745; color: white; border: none; }
+.btn-export-excel:hover { background-color: #28a745; color: white; }
+.btn-export-pdf   { background-color: #e74c3c; color: white; border: none; }
+.btn-export-pdf:hover { background-color: #e74c3c; color: white; }
+
+/* Premium Stat Cards with gradients */
+.stat-card-premium {
+    border-radius: 16px !important;
+    padding: 20px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.stat-card-premium::before {
+    content: '';
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    top: -50px;
+    right: -50px;
+}
+.stat-card-premium.blue {
+    background: linear-gradient(135deg, #3a7bd5 0%, #3a6073 100%);
+}
+.stat-card-premium.green {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+.stat-card-premium.orange {
+    background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);
+}
+.stat-card-premium.purple {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.85;
+    margin-bottom: 5px;
+}
+.stat-card-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+.stat-card-sub {
+    font-size: 0.75rem;
+    opacity: 0.8;
+    margin-top: 5px;
+    font-weight: 500;
+}
+.stat-card-icon {
+    font-size: 2.2rem;
+    opacity: 0.25;
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+}
+
+/* Stat Grid Layout */
+.stat-cards-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+@media (max-width: 1200px) {
+    .stat-cards-row { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 576px) {
+    .stat-cards-row { 
+        grid-template-columns: repeat(2, 1fr) !important; 
+        gap: 10px !important;
+    }
+    .stat-card-premium {
+        padding: 12px 10px !important;
+        min-height: 98px !important;
+        border-radius: 12px !important;
+    }
+    .stat-card-premium::before {
+        width: 90px;
+        height: 90px;
+        top: -30px;
+        right: -30px;
+    }
+    .stat-card-label {
+        font-size: 0.68rem !important;
+        margin-bottom: 3px !important;
+        font-weight: 700 !important;
+    }
+    .stat-card-value {
+        font-size: 1.25rem !important;
+        font-weight: 800 !important;
+    }
+    .stat-card-sub {
+        font-size: 0.6rem !important;
+        margin-top: 3px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .stat-card-icon {
+        font-size: 1.4rem !important;
+        bottom: 10px !important;
+        right: 10px !important;
+    }
+}
+
+.pdf-print-container {
+    width: 100%;
+    max-width: 1020px;
+    margin: 0 auto;
+    background: white;
+    padding: 25px;
+    box-sizing: border-box;
+}

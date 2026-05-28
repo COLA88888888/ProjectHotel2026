@@ -1,0 +1,142 @@
+*:not(.fas):not(.far):not(.fab):not(.fa) { font-family: 'Noto Sans Lao Looped', sans-serif !important; }
+.fas, .far, .fab, .fa { font-family: "Font Awesome 5 Free" !important; font-weight: 900 !important; }
+body { background-color: #f8f9fa; padding: 8px; }
+
+/* Category Buttons */
+.cat-btn {
+    white-space: nowrap;
+    padding: 8px 20px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: #333;
+}
+.cat-btn.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+}
+.cat-scroll { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 5px; scrollbar-width: none; -ms-overflow-style: none; }
+.cat-scroll::-webkit-scrollbar { display: none; }
+
+/* Product Cards */
+.product-card {
+    border: 1px solid #eaeaea !important;
+    border-radius: 12px !important;
+    overflow: hidden;
+    background: #fff;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03) !important;
+}
+.product-card:active {
+    transform: scale(0.97);
+    background: #fdfdfd;
+}
+.qty-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #ff3838;
+    color: white;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.95rem;
+    z-index: 30;
+    border-radius: 50%;
+    box-shadow: 0 4px 8px rgba(255, 56, 56, 0.45);
+    border: 2px solid white;
+}
+.product-img-wrapper {
+    position: relative;
+    width: 100%;
+    height: 155px;
+    overflow: hidden;
+    background: #f8f9fa;
+}
+.product-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.product-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #bdc3c7;
+}
+.product-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #2c3e50;
+    line-height: 1.4;
+    min-height: 2.8em;
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    overflow: hidden;
+    padding: 0 4px;
+}
+.product-price {
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: #27ae60;
+}
+.product-stock {
+    font-size: 0.7rem;
+    color: #7f8c8d;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    body { padding: 5px; }
+    h2 { font-size: 1.1rem !important; }
+    .product-name { font-size: 0.72rem !important; min-height: 2.6em !important; }
+    .product-price { font-size: 0.8rem !important; }
+    .product-stock { font-size: 0.6rem !important; }
+    .product-img-wrapper { height: 110px !important; }
+    .cat-btn { padding: 5px 10px; font-size: 0.7rem; }
+    .cart-container { height: 38vh; }
+    #mainSearch { height: 42px !important; font-size: 0.95rem !important; }
+}
+
+/* Barcode Input Styling */
+.barcode-group {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e0e6ed;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15) !important;
+}
+.barcode-group .input-group-text {
+    background: linear-gradient(135deg, #3498DB, #2980B9);
+    border: none;
+    color: #fff;
+    padding: 0 18px;
+    font-size: 1.4rem;
+}
+#mainSearch {
+    height: 50px !important;
+    border: none;
+    font-size: 1.1rem !important;
+    font-weight: 500;
+}
+#mainSearch:focus {
+    box-shadow: none;
+    background-color: #fff;
+}

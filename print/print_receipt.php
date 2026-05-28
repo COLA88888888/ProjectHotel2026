@@ -65,76 +65,7 @@ $date = date('d/m/Y H:i', strtotime($items[0]['created_at']));
     <title><?php echo $lang['receipt_label'] ?? 'ໃບບິນຮັບເງິນ'; ?> - <?php echo $bill_id; ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;600;700&family=Noto+Sans+Lao+Looped:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../plugins/fontawesome-free/css/all.min.css">
-    <style>
-        body { 
-            font-family: 'Noto Sans Lao', 'Noto Sans Lao Looped', 'Phetsarath OT', sans-serif; 
-            font-size: 13px; 
-            margin: 0; 
-            padding: 0; 
-            color: #000; 
-            background: #f4f4f4; 
-            overflow-x: hidden; 
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        .receipt { 
-            width: 100%; 
-            max-width: 75mm; 
-            margin: 10px auto; 
-            background: #fff; 
-            padding: 5mm; 
-            box-sizing: border-box; 
-            box-shadow: 0 0 10px rgba(0,0,0,0.1); 
-            page-break-inside: avoid; 
-        }
-        .header { text-align: center; margin-bottom: 15px; }
-        .hotel-name { font-size: 18px; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; color: #000; }
-        .divider { border-top: 1.5px dashed #000; margin: 8px 0; }
-        .info-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; font-size: 12px; line-height: 1.4; color: #000; }
-        .info-row span:first-child { flex: 1; padding-right: 5px; color: #000; font-weight: 500; }
-        .info-row span:last-child { text-align: right; font-weight: 700; color: #000; }
-        .item-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; table-layout: fixed; color: #000; }
-        .item-table th { border-bottom: 1.5px dashed #000; text-align: left; padding: 6px 0; color: #000; font-weight: 700; }
-        .item-table td { padding: 8px 0; vertical-align: top; border-bottom: 1px dashed #ddd; word-wrap: break-word; color: #000; }
-        .item-table tr:last-child td { border-bottom: none; }
-        .text-right { text-align: right !important; }
-        .total-section { margin-top: 10px; }
-        .grand-total { font-size: 16px; font-weight: 700; border-top: 1.5px solid #000; padding-top: 6px; margin-top: 6px; color: #000; }
-        .footer { text-align: center; margin-top: 15px; font-size: 11px; line-height: 1.4; color: #000; font-weight: 500; }
-        
-        @media print {
-            * {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color: #000 !important;
-                text-shadow: none !important;
-                box-shadow: none !important;
-            }
-            body { background: none; padding: 0; margin: 0; }
-            .receipt { max-width: 100%; width: 100%; padding: 3mm; margin: 0; box-shadow: none; }
-            .no-print { display: none; }
-        }
-        
-        .btn-print {
-            display: inline-block;
-            padding: 8px 18px;
-            background: #28a745;
-            color: #fff;
-            text-align: center;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-            font-size: 12px;
-            font-family: 'Noto Sans Lao', 'Noto Sans Lao Looped', sans-serif;
-        }
-        
-        @media (max-width: 400px) {
-            .receipt { margin: 5px auto; padding: 3mm; }
-            body { font-size: 11px; }
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/pages/print_receipt.css">
 </head>
 <body>
 
@@ -175,18 +106,63 @@ $date = date('d/m/Y H:i', strtotime($items[0]['created_at']));
             </tr>
         </thead>
         <tbody>
-            <?php foreach($items as $item): 
+            <?php 
+            $total_original_subtotal = 0;
+            $total_line_discount = 0;
+            $total_bill_discount_pre_tax = 0;
+            
+            foreach($items as $item): 
                 $qty = (int)$item['o_qty'];
                 $price = (float)$item['sprice'];
                 $subtotal = $qty * $price;
-                $total += $subtotal;
+                $total_original_subtotal += $subtotal;
+                
+                // Line item discount calculation directly on the unit price
+                $disc_val = (float)($item['discount_value'] ?? 0);
+                $disc_type = $item['discount_type'] ?? 'cash';
+                $unit_discount = 0;
+                if ($disc_val > 0) {
+                    if ($disc_type === 'percent') {
+                        $unit_discount = round($price * ($disc_val / 100));
+                    } else {
+                        $unit_discount = $disc_val;
+                    }
+                }
+                $row_discount = $unit_discount * $qty;
+                $total_line_discount += $row_discount;
+                $item_net_subtotal = $subtotal - $row_discount;
+                if ($item_net_subtotal < 0) $item_net_subtotal = 0;
+                
+                // Pre-tax bill discount share calculation
+                $item_bill_discount_pre_tax = (float)($item['bill_discount'] ?? 0);
+                $total_bill_discount_pre_tax += $item_bill_discount_pre_tax;
             ?>
+            <tr>
                 <td>
-                    <?php echo htmlspecialchars($item['prod_name_localized'] ?: $item['prod_name']); ?>
+                    <strong><?php echo htmlspecialchars($item['prod_name_localized'] ?: $item['prod_name']); ?></strong>
                     <br><small><?php echo number_format($price); ?> x <?php echo $qty; ?></small>
+                    <?php if ($row_discount > 0): ?>
+                        <br><span style="font-size: 11px; color: #d9534f; font-weight: bold;">
+                            <?php if ($disc_type === 'percent'): ?>
+                                <i class="fas fa-percentage"></i> ສ່ວນຫຼຸດ -<?php echo $disc_val; ?>% (-<?php echo number_format($row_discount); ?>)
+                            <?php else: 
+                                $item_disc_pct = ($subtotal > 0) ? round(($row_discount / $subtotal) * 100, 1) : 0;
+                                if (floor($item_disc_pct) == $item_disc_pct) {
+                                    $item_disc_pct = (int)$item_disc_pct;
+                                }
+                            ?>
+                                <i class="fas fa-tag"></i> ສ່ວນຫຼຸດ -<?php echo number_format($disc_val); ?>/ຊິ້ນ (-<?php echo number_format($row_discount); ?> / <?php echo $item_disc_pct; ?>%)
+                            <?php endif; ?>
+                        </span>
+                    <?php endif; ?>
                 </td>
                 <td class="text-right"><?php echo $qty; ?></td>
-                <td class="text-right"><?php echo number_format($subtotal); ?></td>
+                <td class="text-right">
+                    <?php if ($row_discount > 0): ?>
+                        <span style="text-decoration: line-through; color: #888; font-size: 11px;"><?php echo number_format($subtotal); ?></span><br>
+                    <?php endif; ?>
+                    <?php echo number_format($item_net_subtotal); ?>
+                </td>
             </tr>
             <?php endforeach; ?>
         </tbody>
@@ -196,27 +172,60 @@ $date = date('d/m/Y H:i', strtotime($items[0]['created_at']));
 
     <div class="total-section">
         <div class="info-row">
-            <span><?php echo $lang['subtotal']; ?>:</span>
-            <span><?php echo number_format($total); ?></span>
+            <span>ລວມມູນຄ່າ:</span>
+            <span><?php echo number_format($total_original_subtotal); ?></span>
         </div>
-        <?php if($tax_percent > 0): 
-            $tax_amount = round($total * ($tax_percent / 100));
-            $grand_total = $total + $tax_amount;
+        
+        <?php if($total_line_discount > 0): ?>
+            <div class="info-row" style="font-weight: normal; font-size: 12px; color: #d9534f;">
+                <span>ສ່ວນຫຼຸດລາຍການ:</span>
+                <span>-<?php echo number_format($total_line_discount); ?></span>
+            </div>
+        <?php endif; ?>
+        
+        <?php if($total_bill_discount_pre_tax > 0): 
+            $net_before_bill = $total_original_subtotal - $total_line_discount;
+            $bill_disc_pct = ($net_before_bill > 0) ? round(($total_bill_discount_pre_tax / $net_before_bill) * 100, 1) : 0;
+            if (floor($bill_disc_pct) == $bill_disc_pct) {
+                $bill_disc_pct = (int)$bill_disc_pct;
+            }
         ?>
-            <div class="info-row" style="font-weight: normal; font-size: 13px;">
+            <!-- <div class="info-row" style="font-weight: normal; font-size: 12px; color: #d9534f;">
+                <span>ສ່ວນຫຼຸດ: (<?php echo $bill_disc_pct; ?>%):</span>
+                <span>-<?php echo number_format($total_bill_discount_pre_tax); ?></span>
+            </div> -->
+        <?php endif; ?>
+        
+        <?php 
+        $net_before_tax = $total_original_subtotal - $total_line_discount - $total_bill_discount_pre_tax;
+        if ($net_before_tax < 0) $net_before_tax = 0;
+        
+        $tax_amount = round($net_before_tax * ($tax_percent / 100));
+        
+        // Sum exact order amounts from db to ensure 100% consistency with database
+        $db_grand_total = 0;
+        foreach($items as $item) {
+            $db_grand_total += (float)$item['amount'];
+        }
+        $grand_total = ($db_grand_total > 0) ? $db_grand_total : ($net_before_tax + $tax_amount);
+        ?>
+
+        <!-- <div class="info-row" style="font-weight: normal; font-size: 12px;">
+            <span>ມູນຄ່າຫຼັງຫຼຸດ:</span>
+            <span><?php echo number_format($net_before_tax); ?></span>
+        </div> -->
+
+        <?php if($tax_percent > 0): ?>
+            <div class="info-row" style="font-weight: normal; font-size: 12px;">
                 <span><?php echo $lang['tax']; ?> (<?php echo $tax_percent; ?>%):</span>
                 <span><?php echo number_format($tax_amount); ?></span>
             </div>
-            <div class="info-row grand-total">
-                <span><?php echo $lang['grand_total']; ?>:</span>
-                <span><?php echo number_format($grand_total); ?> <?php echo $currency_symbol; ?></span>
-            </div>
-        <?php else: ?>
-            <div class="info-row grand-total">
-                <span><?php echo $lang['grand_total']; ?>:</span>
-                <span><?php echo number_format($total); ?> <?php echo $currency_symbol; ?></span>
-            </div>
         <?php endif; ?>
+
+        <div class="info-row grand-total">
+            <span><?php echo $lang['grand_total']; ?>:</span>
+            <span><?php echo number_format($grand_total); ?> <?php echo $currency_symbol; ?></span>
+        </div>
     </div>
 
     <div class="divider"></div>
@@ -228,6 +237,23 @@ $date = date('d/m/Y H:i', strtotime($items[0]['created_at']));
             echo ($pm == 'Cash' || $pm == 'ເງິນສົດ') ? $lang['cash'] : $lang['transfer']; 
         ?></span>
     </div>
+    <?php 
+    $db_bill_discount_total = 0;
+    foreach($items as $item) {
+        $db_bill_discount_total += (float)$item['bill_discount'];
+    }
+    if($db_bill_discount_total > 0): 
+        $net_before_bill = $total_original_subtotal - $total_line_discount;
+        $bill_disc_pct = ($net_before_bill > 0) ? round(($total_bill_discount_pre_tax / $net_before_bill) * 100, 1) : 0;
+        if (floor($bill_disc_pct) == $bill_disc_pct) {
+            $bill_disc_pct = (int)$bill_disc_pct;
+        }
+    ?>
+        <div class="info-row" style="color: #d9534f; font-weight: bold;">
+            <span>ສ່ວນຫຼຸດ (<?php echo $bill_disc_pct; ?>%):</span>
+            <span>-<?php echo number_format($db_bill_discount_total); ?> <?php echo $currency_symbol; ?></span>
+        </div>
+    <?php endif; ?>
     <div class="info-row">
         <span><?php echo $lang['amount_received_label']; ?>:</span>
         <span><?php echo number_format($items[0]['received'] ?? 0); ?> <?php echo $currency_symbol; ?></span>

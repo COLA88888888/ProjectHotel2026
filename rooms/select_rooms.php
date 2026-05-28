@@ -44,6 +44,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save'])) {
     }
 }
 
+// Handle update
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update'])) {
+    if (!$can_edit) {
+        $_SESSION['error'] = "ທ່ານບໍ່ມີສິດໃນການແກ້ໄຂຂໍ້ມູນຫ້ອງ!";
+        header("Location: select_rooms.php");
+        exit();
+    }
+    $id = $_POST['id'];
+    $room_number = $_POST['room_number'];
+    $room_type = $_POST['room_type'];
+    $bed_type = $_POST['bed_type'];
+    $price = str_replace(',', '', $_POST['price']); // Remove commas before saving
+    $status = $_POST['status']; 
+    $housekeeping_status = $_POST['housekeeping_status']; 
+
+    $stmt = $pdo->prepare("UPDATE rooms SET room_number = ?, room_type = ?, bed_type = ?, price = ?, status = ?, housekeeping_status = ? WHERE id = ?");
+    if ($stmt->execute([$room_number, $room_type, $bed_type, $price, $status, $housekeeping_status, $id])) {
+        logActivity($pdo, "ແກ້ໄຂຂໍ້ມູນຫ້ອງ", "ເລກຫ້ອງ: $room_number, ປະເພດ: $room_type, ລາຄາ: " . number_format((float)$price) . " ກີບ");
+        $_SESSION['success'] = $lang['save_success'];
+        header("Location: select_rooms.php");
+        exit();
+    } else {
+        $_SESSION['error'] = $lang['error_occurred'];
+    }
+}
+
 // Handle delete
 if (isset($_GET['delete'])) {
     if (!$can_delete) {
@@ -134,45 +160,7 @@ $room_types = $stmtTypes->fetchAll();
     <link rel="stylesheet" href="../sweetalert/dist/sweetalert2.min.css">
     <!-- Noto Sans Lao Looped -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao+Looped:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f8f9fa; padding: 20px; color: #333; font-size: 0.9rem; }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; }
-        .card-header { background-color: #fff; border-bottom: 1px solid #eee; padding: 15px 20px; }
-        .card-title { font-weight: 700; color: #2c3e50; font-size: 1.1rem; }
-        
-        /* Table Styling */
-        #roomTable thead th { background-color: #fcfcfc; color: #666; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; border-bottom: 2px solid #eee; padding: 10px 8px; }
-        #roomTable tbody td { vertical-align: middle; padding: 8px 8px; border-bottom: 1px solid #f0f0f0; font-size: 0.82rem; }
-        
-        /* Prevent unnecessary scrollbar on desktop */
-        @media (min-width: 768px) {
-            .table-responsive { overflow-x: hidden !important; }
-        }
-        
-        /* Badges */
-        .badge-status { border-radius: 8px; font-weight: 600; padding: 4px 8px; font-size: 0.78rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .badge-available { background-color: #d4edda !important; color: #155724 !important; border: 1px solid #c3e6cb; }
-        .badge-booked { background-color: #fff3cd !important; color: #856404 !important; border: 1px solid #ffeeba; }
-        .badge-occupied { background-color: #f8d7da !important; color: #721c24 !important; border: 1px solid #f5c6cb; }
-        
-        /* Housekeeping Select */
-        .hk-select { border: 2px solid #ddd; border-radius: 8px; padding: 4px 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s; outline: none; width: 115px; text-align: center; }
-        .hk-select.hk-ready { border-color: #2e86de; background: #fff; color: #2e86de; }
-        .hk-select.hk-cleaning { border-color: #f1c40f; background: #fff; color: #f39c12; }
-        .hk-select.hk-maintenance { border-color: #95a5a6; background: #fff; color: #7f8c8d; }
-        .hk-saving { opacity: 0.5; pointer-events: none; }
-        .hk-select:disabled { background-color: #f1f2f6 !important; color: #a4b0be !important; border-color: #ced6e0 !important; cursor: not-allowed; opacity: 0.8; }
-        
-        /* Actions */
-        .btn-warning { background: transparent !important; border: none !important; color: #ffc107 !important; font-size: 1rem; padding: 0 6px; box-shadow: none !important; }
-        .btn-danger { background: transparent !important; border: none !important; color: #dc3545 !important; font-size: 1rem; padding: 0 6px; box-shadow: none !important; }
-        .btn-warning:hover, .btn-danger:hover { opacity: 0.7; }
-        
-        /* Room number styling */
-        .room-number-cell { font-size: 0.95rem; font-weight: 800; color: #2c3e50; }
-        .price-cell { font-weight: 600; color: #27ae60; }
-        .currency-label { font-size: 0.75rem; color: #999; display: block; margin-top: 2px; }
-    </style>
+    <link rel="stylesheet" href="../assets/css/pages/select_rooms.css">
 </head>
 <body>
 
@@ -265,8 +253,9 @@ $room_types = $stmtTypes->fetchAll();
                             </select>
                         </div>
                     </div>
-                    <div class="card-footer">
-                        <button type="submit" name="save" class="btn btn-primary btn-block"><i class="fas fa-save"></i> <?php echo $lang['save']; ?></button>
+                    <div class="card-footer d-flex justify-content-start bg-white border-top-0">
+                        <button type="submit" name="save" class="btn btn-primary px-4 font-weight-bold" style="border-radius: 8px;"><i class="fas fa-save mr-1"></i> <?php echo $lang['save']; ?></button>
+                        <button type="reset" class="btn btn-default px-4 font-weight-bold ml-2" style="border-radius: 8px;"><?php echo $lang['cancel']; ?></button>
                     </div>
                 </form>
             </div>
@@ -283,7 +272,6 @@ $room_types = $stmtTypes->fetchAll();
                     <table id="roomTable" class="table table-bordered table-striped table-hover text-center">
                         <thead class="bg-light">
                             <tr>
-                                <th><?php echo $lang['no']; ?></th>
                                 <th><?php echo $lang['room_code'] ?? 'ລະຫັດຫ້ອງ'; ?></th>
                                 <th><?php echo $lang['room']; ?></th>
                                 <th><?php echo $lang['room_types_header']; ?></th>
@@ -298,7 +286,6 @@ $room_types = $stmtTypes->fetchAll();
                             <?php if (count($rooms) > 0): ?>
                                 <?php $i = 1; foreach ($rooms as $row): ?>
                                     <tr>
-                                        <td><?php echo $i++; ?></td>
                                         <td><strong>#<?php echo $row['id']; ?></strong></td>
                                         <td class="room-number-cell"><?php echo htmlspecialchars($row['room_number']); ?></td>
                                         <td><?php 
@@ -366,7 +353,14 @@ $room_types = $stmtTypes->fetchAll();
                                         <td style="width: 100px;">
                                             <div class="btn-group btn-group-sm">
                                                 <?php if ($can_edit): ?>
-                                                <a href="edit_room.php?id=<?php echo $row['id']; ?>" class="btn btn-warning text-white" title="<?php echo $lang['edit']; ?>"><i class="fas fa-edit"></i></a>
+                                                 <a href="#" class="btn btn-warning text-white btn-edit-room" title="<?php echo $lang['edit']; ?>" 
+                                                    data-id="<?php echo $row['id']; ?>"
+                                                    data-room-number="<?php echo htmlspecialchars($row['room_number']); ?>"
+                                                    data-room-type="<?php echo htmlspecialchars($row['room_type']); ?>"
+                                                    data-bed-type="<?php echo htmlspecialchars($row['bed_type']); ?>"
+                                                    data-price="<?php echo number_format($row['price']); ?>"
+                                                    data-status="<?php echo htmlspecialchars($row['status']); ?>"
+                                                    data-housekeeping-status="<?php echo htmlspecialchars($row['housekeeping_status']); ?>"><i class="fas fa-edit"></i></a>
                                                 <?php endif; ?>
                                                 <?php if ($can_delete): ?>
                                                 <a href="#" class="btn btn-danger btn-delete" data-id="<?php echo $row['id']; ?>" title="<?php echo $lang['delete']; ?>"><i class="fas fa-trash-alt"></i></a>
@@ -387,6 +381,123 @@ $room_types = $stmtTypes->fetchAll();
                     </table>
                 </div>
             </div>
+        </div>
+</div>
+
+<!-- Edit Room Modal -->
+<div class="modal fade" id="editRoomModal" tabindex="-1" role="dialog" aria-labelledby="editRoomModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 15px 50px rgba(0,0,0,0.15);">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title font-weight-bold" id="editRoomModalLabel"><i class="fas fa-edit mr-2"></i> <?php echo $lang['edit_room'] ?? 'ແກ້ໄຂຂໍ້ມູນຫ້ອງ'; ?></h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="" method="post" id="editRoomModalForm">
+                <div class="modal-body p-4 text-left">
+                    <input type="hidden" name="id" id="modal_room_id">
+                    
+                    <div class="row">
+                        <!-- Left Column (col-md-6) -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold"><?php echo $lang['room_code'] ?? 'ລະຫັດຫ້ອງ'; ?></label>
+                                <input type="text" id="modal_room_id_display" class="form-control" readonly style="background-color: #e9ecef; font-weight: 700; color: #495057; border-radius: 8px;">
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column (col-md-6) -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold"><?php echo $lang['room_number_label'] ?? 'ເລກຫ້ອງ'; ?></label>
+                                <input type="text" name="room_number" id="modal_room_number" class="form-control" required style="border-radius: 8px;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-2">
+                        <!-- Left Column (col-md-6) -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold"><?php echo $lang['room_type_label'] ?? 'ປະເພດຫ້ອງ'; ?></label>
+                                <select name="room_type" id="modal_room_type" class="form-control" style="border-radius: 8px;">
+                                    <?php foreach($room_types as $rt): 
+                                        $r_type_mapped = $rt[$rt_name_col] ?: $rt['room_type_name'];
+                                        if ($r_type_mapped == 'Standard' || strtolower($r_type_mapped) == 'standard') {
+                                            $r_type_mapped = $lang['room_type_standard'] ?? 'Standard';
+                                        } elseif ($r_type_mapped == 'VIP' || strtolower($r_type_mapped) == 'vip') {
+                                            $r_type_mapped = $lang['room_type_vip'] ?? 'VIP';
+                                        } elseif ($r_type_mapped == 'ຫ້ອງຕຽງດ່ຽວ' || strtolower($r_type_mapped) == 'single bed room' || strtolower($r_type_mapped) == 'single room') {
+                                            $r_type_mapped = $lang['room_type_single'] ?? 'Single Bed Room';
+                                        } elseif ($r_type_mapped == 'ຫ້ອງຕຽງຄູ່' || strtolower($r_type_mapped) == 'double bed room' || strtolower($r_type_mapped) == 'double room') {
+                                            $r_type_mapped = $lang['room_type_double'] ?? 'Double Bed Room';
+                                        } elseif ($r_type_mapped == 'ຫ້ອງຄອບຄົວ' || strtolower($r_type_mapped) == 'family room') {
+                                            $r_type_mapped = $lang['room_type_family'] ?? 'Family Room';
+                                        }
+                                    ?>
+                                        <option value="<?php echo htmlspecialchars($rt['room_type_name']); ?>">
+                                            <?php echo htmlspecialchars($r_type_mapped); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column (col-md-6) -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold"><?php echo $lang['bed_type_label'] ?? 'ປະເພດຕຽງ'; ?></label>
+                                <select name="bed_type" id="modal_bed_type" class="form-control" style="border-radius: 8px;">
+                                    <option value="ຕຽງດ່ຽວ"><?php echo $lang['single_bed'] ?? 'Single Bed'; ?></option>
+                                    <option value="ຕຽງຄູ່"><?php echo $lang['double_bed'] ?? 'Double Bed'; ?></option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-2">
+                        <!-- Left Column (col-md-6) -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold"><?php echo $lang['price_per_night'] ?? 'ລາຄາ'; ?> (<?php echo $lang['currency_symbol'] ?? '₭'; ?>)</label>
+                                <input type="text" name="price" id="modal_price" class="form-control number-format" required style="border-radius: 8px;">
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column (col-md-6) -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold"><?php echo $lang['status_label'] ?? 'ສະຖານະຫ້ອງ'; ?></label>
+                                <select name="status" id="modal_status" class="form-control" style="border-radius: 8px;">
+                                    <option value="Available"><?php echo $lang['available']; ?></option>
+                                    <option value="Booked"><?php echo $lang['booked']; ?></option>
+                                    <option value="Occupied"><?php echo $lang['occupied']; ?></option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-2">
+                        <!-- Left Column (col-md-6) -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold"><?php echo $lang['housekeeping_status_label'] ?? 'ສະຖານະຄວາມພ້ອມ'; ?></label>
+                                <select name="housekeeping_status" id="modal_housekeeping_status" class="form-control" style="border-radius: 8px;">
+                                    <option value="ພ້ອມໃຊ້ງານ"><?php echo $lang['ready']; ?></option>
+                                    <option value="Cleaning"><?php echo $lang['cleaning']; ?></option>
+                                    <option value="Maintenance"><?php echo $lang['maintenance']; ?></option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+                <div class="modal-footer bg-white border-top-0 d-flex justify-content-end p-3 px-4">
+                    <button type="submit" name="update" class="btn btn-warning text-white px-4 font-weight-bold" style="border-radius: 8px; border: 2px solid #d39e00;"><i class="fas fa-save mr-1"></i> <?php echo $lang['save'] ?? 'ບັນທຶກ'; ?></button>
+                    <button type="button" class="btn btn-default px-4 font-weight-bold ml-2" data-dismiss="modal" style="border-radius: 8px;"><?php echo $lang['cancel'] ?? 'ຍົກເລີກ'; ?></button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -477,6 +588,48 @@ $(document).ready(function() {
                 window.location.href = "?delete=" + id;
             }
         });
+    });
+
+    // Edit room modal pop-up and data populating
+    $(document).on('click', '.btn-edit-room', function(e) {
+        e.preventDefault();
+        var id = $(this).data('id');
+        var num = $(this).data('room-number');
+        var type = $(this).data('room-type');
+        var bed = $(this).data('bed-type');
+        var price = $(this).data('price');
+        var status = $(this).data('status');
+        var hk = $(this).data('housekeeping-status');
+        
+        $('#modal_room_id').val(id);
+        $('#modal_room_id_display').val('#' + id);
+        $('#modal_room_number').val(num);
+        $('#modal_room_type').val(type);
+        $('#modal_bed_type').val(bed);
+        $('#modal_price').val(price);
+        $('#modal_status').val(status);
+        $('#modal_housekeeping_status').val(hk);
+        
+        $('#editRoomModal').modal('show');
+    });
+
+    // Validate Edit Room Modal Form
+    $('#editRoomModalForm').on('submit', function(e) {
+        var roomNumber = $('#modal_room_number').val().trim();
+        var roomType = $('#modal_room_type').val();
+        var bedType = $('#modal_bed_type').val();
+        var price = $('#modal_price').val().trim();
+        
+        if (roomNumber === '' || roomType === '' || bedType === '' || price === '') {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'warning',
+                title: '<?php echo $lang['warning_label'] ?? 'ແຈ້ງເຕືອນ'; ?>',
+                text: '<?php echo $lang['form_required_msg'] ?? 'ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນທຸກຊ່ອງ!'; ?>',
+                confirmButtonText: '<?php echo $lang['ok'] ?? 'ຕົກລົງ'; ?>'
+            });
+            return false;
+        }
     });
 
     // Housekeeping status update via AJAX

@@ -1,0 +1,37 @@
+body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-color: #f8f9fa; padding: 20px; color: #333; font-size: 0.9rem; }
+.card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; }
+.card-header { background-color: #fff; border-bottom: 1px solid #eee; padding: 15px 20px; }
+.card-title { font-weight: 700; color: #2c3e50; font-size: 1.1rem; }
+
+/* Table Styling */
+#roomTable thead th { background-color: #fcfcfc; color: #666; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; border-bottom: 2px solid #eee; padding: 10px 8px; }
+#roomTable tbody td { vertical-align: middle; padding: 8px 8px; border-bottom: 1px solid #f0f0f0; font-size: 0.82rem; }
+
+/* Prevent unnecessary scrollbar on desktop */
+@media (min-width: 768px) {
+    .table-responsive { overflow-x: hidden !important; }
+}
+
+/* Badges */
+.badge-status { border-radius: 8px; font-weight: 600; padding: 4px 8px; font-size: 0.78rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.badge-available { background-color: #d4edda !important; color: #155724 !important; border: 1px solid #c3e6cb; }
+.badge-booked { background-color: #fff3cd !important; color: #856404 !important; border: 1px solid #ffeeba; }
+.badge-occupied { background-color: #f8d7da !important; color: #721c24 !important; border: 1px solid #f5c6cb; }
+
+/* Housekeeping Select */
+.hk-select { border: 2px solid #ddd; border-radius: 8px; padding: 4px 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s; outline: none; width: 115px; text-align: center; }
+.hk-select.hk-ready { border-color: #2e86de; background: #fff; color: #2e86de; }
+.hk-select.hk-cleaning { border-color: #f1c40f; background: #fff; color: #f39c12; }
+.hk-select.hk-maintenance { border-color: #95a5a6; background: #fff; color: #7f8c8d; }
+.hk-saving { opacity: 0.5; pointer-events: none; }
+.hk-select:disabled { background-color: #f1f2f6 !important; color: #a4b0be !important; border-color: #ced6e0 !important; cursor: not-allowed; opacity: 0.8; }
+
+/* Actions */
+#roomTable .btn-warning { background: transparent !important; border: none !important; color: #ffc107 !important; font-size: 1rem; padding: 0 6px; box-shadow: none !important; }
+#roomTable .btn-danger { background: transparent !important; border: none !important; color: #dc3545 !important; font-size: 1rem; padding: 0 6px; box-shadow: none !important; }
+#roomTable .btn-warning:hover, #roomTable .btn-danger:hover { opacity: 0.7; }
+
+/* Room number styling */
+.room-number-cell { font-size: 0.95rem; font-weight: 800; color: #2c3e50; }
+.price-cell { font-weight: 600; color: #27ae60; }
+.currency-label { font-size: 0.75rem; color: #999; display: block; margin-top: 2px; }
