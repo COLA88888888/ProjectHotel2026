@@ -20,8 +20,10 @@ $today = date('Y-m-d');
 $monday_this_week = date('Y-m-d', strtotime('monday this week'));
 $first_day_this_month = date('Y-m-01');
 
-$start_date = $_GET['start_date'] ?? date('Y-m-01'); // Default to start of month
-$end_date = $_GET['end_date'] ?? date('Y-m-d');
+$start_date = !empty($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01'); // Default to start of month
+$end_date = !empty($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');
+$start_date_formatted = date('d/m/Y', strtotime($start_date));
+$end_date_formatted = date('d/m/Y', strtotime($end_date));
 
 // Fetch Tax Percent
 $stmtTax = $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'tax_percent'");
@@ -403,8 +405,8 @@ foreach ($all_bookings as $b) {
                 margin-bottom: 10px !important;
             }
             .pdf-table-container th, .pdf-table-container td {
-                border: 0.5pt solid #aaaaaa !important;
-                padding: 10px 8px !important;
+                border: 1px solid #666666 !important;
+                padding: 8px 6px !important;
                 font-size: 10px !important;
                 line-height: 1.5 !important;
                 word-break: break-word !important;
@@ -416,6 +418,8 @@ foreach ($all_bookings as $b) {
                 color: #ffffff !important;
                 font-weight: bold !important;
                 text-align: center !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             .pdf-table-container .text-right {
                 text-align: right !important;
@@ -428,7 +432,7 @@ foreach ($all_bookings as $b) {
             }
         </style>
         <div class="pdf-table-title" id="pdfReportTitle">ລາຍງານລາຍຮັບ ຈາກການພັກ</div>
-        <div class="pdf-table-subtitle">ໄລຍະເວລາ: <?php echo date('d/m/Y', strtotime($start_date)); ?> ຫາ <?php echo date('d/m/Y', strtotime($end_date)); ?></div>
+        <div class="pdf-table-subtitle">ໄລຍະເວລາ: <?php echo $start_date_formatted; ?> ຫາ <?php echo $end_date_formatted; ?></div>
         <div id="pdfTablePlaceholder"></div>
     </div>
 </div>
@@ -442,8 +446,8 @@ foreach ($all_bookings as $b) {
 <!-- DataTables -->
 <script src="../plugins/datatables/jquery.dataTables.min.js"></script>
 <script src="../plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
-<!-- HTML2PDF CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- Local HTML2PDF Library -->
+<script src="../plugins/html2pdf/html2pdf.bundle.min.js?v=<?php echo time(); ?>"></script>
 
 <script>
 $(document).ready(function() {
@@ -587,7 +591,7 @@ $(document).ready(function() {
             margin: 12,
             filename: pdfTitle + '_' + new Date().toISOString().split('T')[0] + '.pdf',
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2.5, useCORS: true, letterRendering: true },
+            html2canvas: { scale: 2.5, useCORS: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
         };
         var element = document.getElementById('pdfExportContainer');
@@ -610,9 +614,9 @@ function exportTableToExcel() {
     var excelHtml = `
 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
-<meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
-<!--[if gte mso 9]>
-<xml>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<!--[if gte mso 9]><xml>
  <x:ExcelWorkbook>
   <x:ExcelWorksheets>
    <x:ExcelWorksheet>
@@ -623,14 +627,14 @@ function exportTableToExcel() {
    </x:ExcelWorksheet>
   </x:ExcelWorksheets>
  </x:ExcelWorkbook>
-</xml>
-<![endif]-->
+</xml><![endif]-->
 <style>
   body, table, td, th {
-    font-family: 'Noto Sans Lao', 'Noto Sans Lao Looped', 'Segoe UI', sans-serif;
+    font-family: 'Phetsarath OT', 'Saysettha OT', 'Noto Sans Lao', Arial Unicode MS, sans-serif;
+    mso-number-format: '@';
   }
   table { border-collapse: collapse; width: 100%; }
-  th, td { border: 0.5pt solid #cccccc; padding: 6px; font-size: 11pt; }
+  th, td { border: 1pt solid #999999; padding: 6px; font-size: 11pt; mso-number-format: '@'; }
   th { background-color: #2c3e50; color: #ffffff; font-weight: bold; text-align: center; }
   .text-right { text-align: right; }
   .text-left { text-align: left; }
@@ -643,7 +647,7 @@ function exportTableToExcel() {
 <table>
   <thead>
     <tr class="title-row"><th colspan="9">ລາຍງານລາຍຮັບການເຂົ້າພັກ (Room Stays Revenue Report)</th></tr>
-    <tr class="title-row"><th colspan="9" style="font-size: 10pt; font-weight: normal; color: #555;">ໄລຍະເວລາ: <?php echo date('d/m/Y', strtotime($start_date)); ?> ຫາ <?php echo date('d/m/Y', strtotime($end_date)); ?></th></tr>
+    <tr class="title-row"><th colspan="9" style="font-size: 10pt; font-weight: normal; color: #555;">ໄລຍະເວລາ: <?php echo $start_date_formatted; ?> ຫາ <?php echo $end_date_formatted; ?></th></tr>
     <tr>
       <th>ຫ້ອງ</th>
       <th>ລູກຄ້າ / ຈຳນວນຄົນ</th>
@@ -707,7 +711,7 @@ function exportTableToExcel() {
 </body>
 </html>`;
 
-    var blob = new Blob([excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    var blob = new Blob(["\ufeff", excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
     var link = document.createElement("a");
     if (link.download !== undefined) {
         var url = URL.createObjectURL(blob);

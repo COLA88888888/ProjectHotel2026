@@ -298,51 +298,51 @@ $is_admin = ($_SESSION['status'] === 'ຜູ້ບໍລິຫານ');
             </a>
             <ul class="nav nav-treeview">
               <li class="nav-item">
-                <a href="reports/report.php" target="frame" class="nav-link">
+                <a href="reports/report.php?v=<?php echo time(); ?>" target="frame" class="nav-link">
                   <i class="fas fa-file-invoice-dollar nav-icon text-danger"></i>
-                  <p>ລາຍງານການເງິນ ແລະ ກຳໄລ</p>
+                  <p><?php echo $lang['financial_report']; ?></p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="reports/report_sales.php" target="frame" class="nav-link">
+                <a href="reports/report_sales.php?v=<?php echo time(); ?>" target="frame" class="nav-link">
                   <i class="fas fa-chart-line nav-icon text-success"></i>
-                  <p>ລາຍງານການຂາຍ</p>
+                  <p><?php echo $lang['best_selling_products_label'] ?? 'ລາຍງານສິນຄ້າຂາຍດີ'; ?></p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="reports/report_checkin_checkout.php" target="frame" class="nav-link">
+                <a href="reports/report_checkin_checkout.php?v=<?php echo time(); ?>" target="frame" class="nav-link">
                   <i class="fas fa-key nav-icon text-primary"></i>
-                  <p>ລາຍງານການເຂົ້າພັກ</p>
+                  <p><?php echo $lang['checkin_checkout_report']; ?></p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="reports/report_room_popularity.php" target="frame" class="nav-link">
+                <a href="reports/report_room_popularity.php?v=<?php echo time(); ?>" target="frame" class="nav-link">
                   <i class="fas fa-door-open nav-icon text-warning"></i>
-                  <p>ປະເພດຫ້ອງຈອງຫຼາຍ</p>
+                  <p><?php echo $lang['popular_room_report_label'] ?? 'ປະເພດຫ້ອງຈອງຫຼາຍ'; ?></p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="reports/report_services.php" target="frame" class="nav-link">
+                <a href="reports/report_services.php?v=<?php echo time(); ?>" target="frame" class="nav-link">
                   <i class="fas fa-utensils nav-icon text-success"></i>
-                  <p>ລາຍງານບໍລິການເພີ່ມເຕີມ</p>
+                  <p><?php echo $lang['additional_services_report_label'] ?? 'ລາຍງານບໍລິການເພີ່ມເຕີມ'; ?></p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="reports/expenses.php" target="frame" class="nav-link">
+                <a href="reports/expenses.php?v=<?php echo time(); ?>" target="frame" class="nav-link">
                   <i class="fas fa-receipt nav-icon text-info"></i>
-                  <p>ຈັດການລາຍຈ່າຍ</p>
+                  <p><?php echo $lang['manage_expenses_label'] ?? 'ຈັດການລາຍຈ່າຍ'; ?></p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="products/stock.php" target="frame" class="nav-link">
+                <a href="products/stock.php?v=<?php echo time(); ?>" target="frame" class="nav-link">
                   <i class="fas fa-boxes nav-icon text-light"></i>
-                  <p>ລາຍງານສະຕ໋ອກ</p>
+                  <p><?php echo $lang['stock_report']; ?></p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="reports/report_pos_history.php" target="frame" class="nav-link">
+                <a href="reports/report_pos_history.php?v=<?php echo time(); ?>" target="frame" class="nav-link">
                   <i class="fas fa-shopping-cart nav-icon text-muted"></i>
-                  <p>ປະຫວັດການຂາຍ POS</p>
+                  <p><?php echo $lang['pos_sales_history_label'] ?? 'ປະຫວັດການຂາຍ POS'; ?></p>
                 </a>
               </li>
             </ul>

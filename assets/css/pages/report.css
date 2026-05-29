@@ -17,20 +17,20 @@ body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-co
 
 .stat-card {
     position: relative;
-    border-radius: 12px;
-    padding: 14px 16px;
+    border-radius: 14px;
+    padding: 20px 24px;
     color: #fff;
     overflow: hidden;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
     text-decoration: none;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 90px;
-    border: 1px solid rgba(255,255,255,0.1);
+    min-height: 120px;
+    border: 1px solid rgba(255,255,255,0.15);
 }
 .stat-card:hover {
-    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.12);
 }
 
 .stat-card.gc-green  { background: linear-gradient(135deg, #1D976C 0%, #93F9B9 100%); }
@@ -40,9 +40,9 @@ body { font-family: 'Noto Sans Lao Looped', sans-serif !important; background-co
 .stat-card.gc-teal   { background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%); }
 .stat-card.gc-dark   { background: linear-gradient(135deg, #30E8BF 0%, #FF8235 100%); }
 
-.stat-card-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; opacity: 0.9; margin-bottom: 5px; }
-.stat-card-value { font-size: 1.45rem; font-weight: 800; line-height: 1.1; }
-.stat-card-icon { font-size: 1.7rem; opacity: 0.2; position: absolute; top: 12px; right: 14px; }
+.stat-card-label { font-size: 0.88rem; font-weight: 700; text-transform: uppercase; opacity: 0.95; margin-bottom: 8px; }
+.stat-card-value { font-size: 1.85rem; font-weight: 800; line-height: 1.1; }
+.stat-card-icon { font-size: 2.6rem; opacity: 0.25; position: absolute; top: 18px; right: 20px; }
 
 /* Section Header */
 .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #eef2f7; }

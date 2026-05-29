@@ -655,7 +655,7 @@ $(document).ready(function() {
             
             // Dynamically update status column if current status is Available
             if (currentStatus === 'Available') {
-                var $statusTd = $sel.closest('tr').find('td').eq(6);
+                var $statusTd = $sel.closest('tr').find('td').eq(5);
                 if (newStatus === 'ພ້ອມໃຊ້ງານ') {
                     $statusTd.html('<span class="badge badge-available badge-status"><?php echo $lang['available']; ?></span>');
                 } else if (newStatus === 'Cleaning') {

@@ -190,6 +190,20 @@ foreach($expenses as $ex) {
         <!-- Expense List -->
         <div class="col-md-8">
             <div class="card card-outline card-danger shadow-sm">
+                <div class="card-header bg-transparent border-0 d-flex flex-wrap align-items-center justify-content-between py-3" style="gap: 15px;">
+                    <h5 class="mb-0 font-weight-bold text-dark">
+                        <i class="fas fa-list text-danger mr-2"></i> <?php echo $lang['expenses_management'] ?? 'ຈັດການລາຍຈ່າຍ'; ?>
+                    </h5>
+                    <!-- Export Buttons -->
+                    <div class="d-flex align-items-center no-print ml-auto" style="gap: 10px;">
+                        <button type="button" class="btn btn-sm btn-success font-weight-bold shadow-sm" onclick="exportTableToExcel()" style="border-radius: 6px;">
+                            <i class="fas fa-file-excel mr-1"></i> Excel
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger font-weight-bold shadow-sm" id="btnPdf" style="border-radius: 6px;">
+                            <i class="fas fa-file-pdf mr-1"></i> PDF
+                        </button>
+                    </div>
+                </div>
                 <div class="card-body p-3">
                     <div class="table-responsive">
                         <table id="expenseTable" class="table table-hover text-center m-0">
@@ -293,11 +307,69 @@ foreach($expenses as $ex) {
     </div>
 </div>
 
+    <!-- PDF Export Hidden Container -->
+    <div id="pdfExportContainer" style="display: none;">
+        <div class="pdf-table-container">
+            <style>
+                .pdf-table-container {
+                    font-family: 'Noto Sans Lao', 'Noto Sans Lao Looped', 'Segoe UI', sans-serif !important;
+                    padding: 15px;
+                }
+                .pdf-table-title {
+                    font-size: 16px;
+                    font-weight: bold;
+                    text-align: center;
+                    margin-bottom: 5px;
+                    color: #2c3e50;
+                }
+                .pdf-table-subtitle {
+                    font-size: 11px;
+                    text-align: center;
+                    margin-bottom: 20px;
+                    color: #7f8c8d;
+                }
+                .pdf-table-container table {
+                    width: 100% !important;
+                    border-collapse: collapse !important;
+                    margin-bottom: 10px !important;
+                }
+                .pdf-table-container th, .pdf-table-container td {
+                    border: 0.5pt solid #aaaaaa !important;
+                    padding: 10px 8px !important;
+                    font-size: 10px !important;
+                    line-height: 1.5 !important;
+                    word-break: break-word !important;
+                    white-space: normal !important;
+                    vertical-align: middle !important;
+                }
+                .pdf-table-container th {
+                    background-color: #2c3e50 !important;
+                    color: #ffffff !important;
+                    font-weight: bold !important;
+                    text-align: center !important;
+                }
+                .pdf-table-container .text-right {
+                    text-align: right !important;
+                }
+                .pdf-table-container .text-left {
+                    text-align: left !important;
+                }
+                .pdf-table-container .text-center {
+                    text-align: center !important;
+                }
+            </style>
+            <div class="pdf-table-title" id="pdfReportTitle">ລາຍງານລາຍຈ່າຍທົ່ວໄປ</div>
+            <div class="pdf-table-subtitle">ໄລຍະເວລາ: <?php echo date('d/m/Y', strtotime($start_date)); ?> ຫາ <?php echo date('d/m/Y', strtotime($end_date)); ?></div>
+            <div id="pdfTablePlaceholder"></div>
+        </div>
+    </div>
+
 <script src="../plugins/jquery/jquery.min.js"></script>
 <script src="../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="../plugins/datatables/jquery.dataTables.min.js"></script>
 <script src="../plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
 <script src="../sweetalert/dist/sweetalert2.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <script>
 $(document).ready(function() {
@@ -333,7 +405,184 @@ $(document).ready(function() {
         $('#edit_date').val($(this).data('date'));
         $('#editExpenseModal').modal('show');
     });
+
+    // PDF Export
+    $('#btnPdf').click(function() {
+        var pdfTitle = "ລາຍງານລາຍຈ່າຍ";
+        var tableHtml = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th class="text-left">ຫົວຂໍ້ລາຍຈ່າຍ</th>
+                        <th>ໝວດໝູ່</th>
+                        <th class="text-right">ມູນຄ່າ</th>
+                        <th>ວັນທີຈ່າຍ</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        var totalAmount = 0;
+        
+        $('#expenseTable tbody tr').each(function() {
+            var cols = $(this).find('td');
+            if (cols.length > 1) {
+                var index = $(cols[0]).text().trim();
+                var title = $(cols[1]).text().trim();
+                var category = $(cols[2]).text().trim();
+                var amountText = $(cols[3]).text().trim().replace(/[^\d]/g, '');
+                var amountVal = parseInt(amountText) || 0;
+                var amount = Number(amountVal).toLocaleString() + ' ₭';
+                var date = $(cols[4]).text().trim();
+                
+                totalAmount += amountVal;
+                
+                tableHtml += `
+                    <tr>
+                        <td class="text-center">${index}</td>
+                        <td class="text-left" style="font-weight:bold;">${title}</td>
+                        <td class="text-center">${category}</td>
+                        <td class="text-right" style="font-weight:bold; color:#d9534f;">${amount}</td>
+                        <td class="text-center text-muted">${date}</td>
+                    </tr>
+                `;
+            }
+        });
+        
+        tableHtml += `
+                </tbody>
+                <tfoot>
+                    <tr style="font-weight:bold; background-color: #f9f9f9;">
+                        <td class="text-right" colspan="3">ມູນຄ່າລວມ:</td>
+                        <td class="text-right" style="color:#d9534f; font-weight:bold;">${totalAmount.toLocaleString()} ₭</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        `;
+        
+        $('#pdfTablePlaceholder').html(tableHtml);
+        
+        var opt = {
+            margin: 12,
+            filename: pdfTitle + '_' + new Date().toISOString().split('T')[0] + '.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2.5, useCORS: true, letterRendering: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        };
+        var element = document.getElementById('pdfExportContainer');
+        element.style.display = 'block';
+        html2pdf().set(opt).from(element).save().then(function() {
+            element.style.display = 'none';
+            Swal.fire({ icon: 'success', title: 'ດາວໂຫຼດ PDF ສຳເລັດ', confirmButtonColor: '#28a745', confirmButtonText: 'ຕົກລົງ' });
+        }).catch(function(err) {
+            element.style.display = 'none';
+            Swal.fire({ icon: 'error', title: 'ຜິດພາດ', text: err, confirmButtonColor: '#d33', confirmButtonText: 'ຕົກລົງ' });
+        });
+    });
 });
+
+// Excel Export Function
+function exportTableToExcel() {
+    var filename = "ລາຍງານ_ລາຍຈ່າຍ_" + new Date().toISOString().split('T')[0] + ".xls";
+    
+    var excelHtml = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<!--[if gte mso 9]><xml>
+ <x:ExcelWorkbook>
+  <x:ExcelWorksheets>
+   <x:ExcelWorksheet>
+    <x:Name>ລາຍງານລາຍຈ່າຍ</x:Name>
+    <x:WorksheetOptions>
+     <x:DisplayGridlines/>
+    </x:WorksheetOptions>
+   </x:ExcelWorksheet>
+  </x:ExcelWorksheets>
+ </x:ExcelWorkbook>
+</xml><![endif]-->
+<style>
+  body, table, td, th {
+    font-family: 'Phetsarath OT', 'Saysettha OT', 'Noto Sans Lao', Arial Unicode MS, sans-serif;
+    mso-number-format: '@';
+  }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1pt solid #999999; padding: 6px; font-size: 11pt; mso-number-format: '@'; }
+  th { background-color: #2c3e50; color: #ffffff; font-weight: bold; text-align: center; }
+  .text-right { text-align: right; }
+  .text-left { text-align: left; }
+  .text-center { text-align: center; }
+  .title-row { font-size: 14pt; font-weight: bold; height: 35px; text-align: center; }
+  .total-row { font-weight: bold; background-color: #f9f9f9; }
+</style>
+</head>
+<body>
+<table>
+  <thead>
+    <tr class="title-row"><th colspan="5">ລາຍງານລາຍຈ່າຍທົ່ວໄປ (General Expenses Report)</th></tr>
+    <tr class="title-row"><th colspan="5" style="font-size: 10pt; font-weight: normal; color: #555;">ໄລຍະເວລາ: <?php echo date('d/m/Y', strtotime($start_date)); ?> ຫາ <?php echo date('d/m/Y', strtotime($end_date)); ?></th></tr>
+    <tr>
+      <th>#</th>
+      <th>ຫົວຂໍ້ລາຍຈ່າຍ</th>
+      <th>ໝວດໝູ່</th>
+      <th>ມູນຄ່າ</th>
+      <th>ວັນທີຈ່າຍ</th>
+    </tr>
+  </thead>
+  <tbody>
+`;
+
+    var totalAmount = 0;
+    $('#expenseTable tbody tr').each(function() {
+        var cols = $(this).find('td');
+        if (cols.length > 1) {
+            var index = $(cols[0]).text().trim();
+            var title = $(cols[1]).text().trim();
+            var category = $(cols[2]).text().trim();
+            var amountText = $(cols[3]).text().trim().replace(/[^\d]/g, '');
+            var amountVal = parseInt(amountText) || 0;
+            var date = $(cols[4]).text().trim();
+            
+            totalAmount += amountVal;
+            
+            excelHtml += `
+    <tr>
+      <td class="text-center">${index}</td>
+      <td class="text-left" style="font-weight:bold;">${title}</td>
+      <td class="text-center">${category}</td>
+      <td class="text-right">${amountVal}</td>
+      <td class="text-center">${date}</td>
+    </tr>`;
+        }
+    });
+
+    excelHtml += `
+    <tr class="total-row">
+      <td colspan="3" class="text-right">ມູນຄ່າລວມ:</td>
+      <td class="text-right" style="color:#d9534f;">${totalAmount}</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+</body>
+</html>`;
+
+    var blob = new Blob(["\ufeff", excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    var link = document.createElement("a");
+    if (link.download !== undefined) {
+        var url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        Swal.fire({ icon: 'success', title: 'Export Excel ສຳເລັດ', confirmButtonColor: '#28a745', confirmButtonText: 'ຕົກລົງ' });
+    }
+}
 </script>
 </body>
 </html>

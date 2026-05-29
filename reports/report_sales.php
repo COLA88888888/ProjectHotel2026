@@ -13,8 +13,10 @@ if (file_exists($lang_file)) {
 }
 
 // Default to start of month to today
-$start_date = $_GET['start_date'] ?? date('Y-m-01');
-$end_date = $_GET['end_date'] ?? date('Y-m-d');
+$start_date = !empty($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01');
+$end_date = !empty($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');
+$start_date_formatted = date('d/m/Y', strtotime($start_date));
+$end_date_formatted = date('d/m/Y', strtotime($end_date));
 
 // Helper to pre-calculate quick dates
 $today = date('Y-m-d');
@@ -282,10 +284,8 @@ $top_services = $stmtTopServ->fetchAll();
                                 </tr>
                         <?php 
                             endforeach;
-                        else: 
+                        endif; 
                         ?>
-                            <tr><td colspan="6" class="py-4 text-muted">ບໍ່ມີຂໍ້ມູນ</td></tr>
-                        <?php endif; ?>
                     </tbody>
                     <tfoot>
                         <tr class="bg-light font-weight-bold" style="border-top: 2px solid #dee2e6;">
@@ -330,8 +330,8 @@ $top_services = $stmtTopServ->fetchAll();
                 margin-bottom: 10px !important;
             }
             .pdf-table-container th, .pdf-table-container td {
-                border: 0.5pt solid #aaaaaa !important;
-                padding: 10px 8px !important;
+                border: 1px solid #666666 !important;
+                padding: 8px 6px !important;
                 font-size: 10px !important;
                 line-height: 1.5 !important;
                 word-break: break-word !important;
@@ -343,6 +343,8 @@ $top_services = $stmtTopServ->fetchAll();
                 color: #ffffff !important;
                 font-weight: bold !important;
                 text-align: center !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             .pdf-table-container .text-right {
                 text-align: right !important;
@@ -355,7 +357,7 @@ $top_services = $stmtTopServ->fetchAll();
             }
         </style>
         <div class="pdf-table-title" id="pdfReportTitle">ລາຍງານການຂາຍສິນຄ້າ POS (Top 10)</div>
-        <div class="pdf-table-subtitle">ໄລຍະເວລາ: <?php echo date('d/m/Y', strtotime($start_date)); ?> ຫາ <?php echo date('d/m/Y', strtotime($end_date)); ?></div>
+        <div class="pdf-table-subtitle">ໄລຍະເວລາ: <?php echo $start_date_formatted; ?> ຫາ <?php echo $end_date_formatted; ?></div>
         <div id="pdfTablePlaceholder"></div>
     </div>
 </div>
@@ -371,15 +373,26 @@ $top_services = $stmtTopServ->fetchAll();
 <script src="../plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
 <!-- ChartJS -->
 <script src="../plugins/chart.js/Chart.min.js"></script>
-<!-- HTML2PDF CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- Local HTML2PDF Library -->
+<script src="../plugins/html2pdf/html2pdf.bundle.min.js?v=<?php echo time(); ?>"></script>
 
 <script>
+window.onerror = function(message, source, lineno, colno, error) {
+    Swal.fire({
+        icon: 'error',
+        title: 'JavaScript Error',
+        text: message + " on line " + lineno + " in " + source,
+        confirmButtonText: 'OK'
+    });
+    return false;
+};
+
+var topProductsData = <?php echo json_encode($top_products); ?>;
+
 $(document).ready(function() {
     // ----------------------------------------------------
     // 1. Chart.js Config for Top 10 Best Selling Products
     // ----------------------------------------------------
-    const topProductsData = <?php echo json_encode($top_products); ?>;
     
     if (topProductsData.length > 0) {
         const labels = topProductsData.map(p => p.product_name_localized || p.prod_name);
@@ -499,6 +512,10 @@ $(document).ready(function() {
     // 3. PDF Export Click Handler (POS only)
     // ----------------------------------------------------
     $('#btnPdf').click(function() {
+        var btn = $(this);
+        var originalHtml = btn.html();
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> ກຳລັງສ້າງ PDF...');
+
         var pdfTitle = "ລາຍງານການຂາຍສິນຄ້າ POS (Top 10)";
         
         var tableHtml = `
@@ -516,39 +533,52 @@ $(document).ready(function() {
                 <tbody>
         `;
         
-        $('#topProductsTable tbody tr').each(function() {
-            var cols = $(this).find('td');
-            if (cols.length > 1) {
+        var totQty = 0;
+        var totRev = 0;
+
+        if (topProductsData && topProductsData.length > 0) {
+            topProductsData.forEach(function(p) {
+                var code = p.prod_code || '';
+                var category = p.category_name_localized || p.category_name || 'Unknown';
+                var name = p.product_name_localized || p.prod_name || 'Unknown';
+                var qtyVal = parseInt(p.total_qty) || 0;
+                var priceVal = parseFloat(p.prod_price) || 0;
+                var totalVal = parseFloat(p.total_revenue) || 0;
+
+                totQty += qtyVal;
+                totRev += totalVal;
+
                 tableHtml += `
                     <tr>
-                        <td>${$(cols[0]).text().trim()}</td>
-                        <td>${$(cols[1]).text().trim()}</td>
-                        <td class="text-left" style="font-weight: bold;">${$(cols[2]).text().trim()}</td>
-                        <td class="text-center" style="font-weight: bold;">${$(cols[3]).text().trim()}</td>
-                        <td class="text-right">${$(cols[4]).text().trim()}</td>
-                        <td class="text-right" style="font-weight: bold; color: #2c3e50;">${$(cols[5]).text().trim()}</td>
+                        <td class="text-center">${code}</td>
+                        <td class="text-center">${category}</td>
+                        <td class="text-left" style="font-weight: bold;">${name}</td>
+                        <td class="text-center" style="font-weight: bold;">${qtyVal.toLocaleString()}</td>
+                        <td class="text-right">${priceVal.toLocaleString()} ₭</td>
+                        <td class="text-right" style="font-weight: bold; color: #2c3e50;">${totalVal.toLocaleString()} ₭</td>
                     </tr>
                 `;
-            }
-        });
-        
-        var footerCols = $('#topProductsTable tfoot tr').find('td');
-        if (footerCols.length > 0) {
-            tableHtml += `
-                </tbody>
-                <tfoot>
-                    <tr style="font-weight: bold; background-color: #f9f9f9;">
-                        <td colspan="3" class="text-right">ມູນຄ່າລວມສິນຄ້າທີ່ຂາຍດີ:</td>
-                        <td class="text-center">${$(footerCols[1]).text().trim()}</td>
-                        <td>-</td>
-                        <td class="text-right" style="color: #d9534f;">${$(footerCols[3]).text().trim()}</td>
-                    </tr>
-                </tfoot>
-            </table>
-            `;
+            });
         } else {
-            tableHtml += `</tbody></table>`;
+            tableHtml += `
+                <tr>
+                    <td colspan="6" class="text-center" style="color: #7f8c8d; padding: 15px;">ບໍ່ມີຂໍ້ມູນການຂາຍໃນໄລຍະເວລານີ້</td>
+                </tr>
+            `;
         }
+
+        tableHtml += `
+            </tbody>
+            <tfoot>
+                <tr style="font-weight: bold; background-color: #f9f9f9;">
+                    <td colspan="3" class="text-right">ມູນຄ່າລວມສິນຄ້າທີ່ຂາຍດີ:</td>
+                    <td class="text-center">${totQty.toLocaleString()}</td>
+                    <td>-</td>
+                    <td class="text-right" style="color: #d9534f;">${totRev.toLocaleString()} ₭</td>
+                </tr>
+            </tfoot>
+        </table>
+        `;
 
         $('#pdfReportTitle').text(pdfTitle);
         $('#pdfTablePlaceholder').html(tableHtml);
@@ -557,32 +587,37 @@ $(document).ready(function() {
             margin:       12,
             filename:     pdfTitle + '_' + new Date().toISOString().split('T')[0] + '.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2.5, useCORS: true, letterRendering: true },
+            html2canvas:  { scale: 2.5, useCORS: true },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
         };
 
         var element = document.getElementById('pdfExportContainer');
         element.style.display = 'block';
         
-        html2pdf().set(opt).from(element).save().then(function() {
-            element.style.display = 'none';
-            Swal.fire({
-                icon: 'success',
-                title: 'ດາວໂຫຼດ PDF ສຳເລັດ',
-                text: 'ລາຍງານນີ້ໄດ້ຖືກ Export ອອກເປັນ PDF ຮຽບຮ້ອຍແລ້ວ!',
-                confirmButtonColor: '#28a745',
-                confirmButtonText: 'ຕົກລົງ'
+        // 150ms timeout ensures the DOM paint has finished before html2pdf captures
+        setTimeout(function() {
+            html2pdf().set(opt).from(element).save().then(function() {
+                element.style.display = 'none';
+                btn.prop('disabled', false).html(originalHtml);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'ດາວໂຫຼດ PDF ສຳເລັດ',
+                    text: 'ລາຍງານນີ້ໄດ້ຖືກ Export ອອກເປັນ PDF ຮຽບຮ້ອຍແລ້ວ!',
+                    confirmButtonColor: '#28a745',
+                    confirmButtonText: 'ຕົກລົງ'
+                });
+            }).catch(function(err) {
+                element.style.display = 'none';
+                btn.prop('disabled', false).html(originalHtml);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ຜິດພາດ',
+                    text: 'ບໍ່ສາມາດສ້າງ PDF ໄດ້: ' + err,
+                    confirmButtonColor: '#d33',
+                    confirmButtonText: 'ຕົກລົງ'
+                });
             });
-        }).catch(function(err) {
-            element.style.display = 'none';
-            Swal.fire({
-                icon: 'error',
-                title: 'ຜິດພາດ',
-                text: 'ບໍ່ສາມາດສ້າງ PDF ໄດ້: ' + err,
-                confirmButtonColor: '#d33',
-                confirmButtonText: 'ຕົກລົງ'
-            });
-        });
+        }, 150);
     });
 });
 
@@ -599,13 +634,54 @@ function setPeriod(start, end) {
 function exportTableToExcel() {
     var filename = "ລາຍງານ_ການຂາຍ_POS_" + new Date().toISOString().split('T')[0] + ".xls";
     
+    var rows = '';
+    var totQty = 0;
+    var totRev = 0;
+
+    if (topProductsData && topProductsData.length > 0) {
+        topProductsData.forEach(function(p) {
+            var code = p.prod_code || '';
+            var category = p.category_name_localized || p.category_name || 'Unknown';
+            var name = p.product_name_localized || p.prod_name || 'Unknown';
+            var qtyVal = parseInt(p.total_qty) || 0;
+            var priceVal = parseFloat(p.prod_price) || 0;
+            var totalVal = parseFloat(p.total_revenue) || 0;
+
+            totQty += qtyVal;
+            totRev += totalVal;
+
+            rows += `
+    <tr>
+      <td class="text-center">${code}</td>
+      <td class="text-center">${category}</td>
+      <td class="text-left">${name}</td>
+      <td class="text-center">${qtyVal.toLocaleString()}</td>
+      <td class="text-right">${priceVal}</td>
+      <td class="text-right">${totalVal}</td>
+    </tr>`;
+        });
+    } else {
+        rows += `
+    <tr>
+      <td colspan="6" class="text-center">ບໍ່ມີຂໍ້ມູນການຂາຍໃນໄລຍະເວລານີ້</td>
+    </tr>`;
+    }
+
+    rows += `
+    <tr class="total-row">
+      <td colspan="3" class="text-right">ມູນຄ່າລວມສິນຄ້າທີ່ຂາຍດີ:</td>
+      <td class="text-center">${totQty.toLocaleString()}</td>
+      <td class="text-center">-</td>
+      <td class="text-right">${totRev}</td>
+    </tr>`;
+
     // Build HTML spreadsheet with custom Lao font support
     var excelHtml = `
 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
-<meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
-<!--[if gte mso 9]>
-<xml>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<!--[if gte mso 9]><xml>
  <x:ExcelWorkbook>
   <x:ExcelWorksheets>
    <x:ExcelWorksheet>
@@ -616,14 +692,14 @@ function exportTableToExcel() {
    </x:ExcelWorksheet>
   </x:ExcelWorksheets>
  </x:ExcelWorkbook>
-</xml>
-<![endif]-->
+</xml><![endif]-->
 <style>
   body, table, td, th {
-    font-family: 'Noto Sans Lao', 'Noto Sans Lao Looped', 'Segoe UI', sans-serif;
+    font-family: 'Phetsarath OT', 'Saysettha OT', 'Noto Sans Lao', Arial Unicode MS, sans-serif;
+    mso-number-format: '@';
   }
   table { border-collapse: collapse; width: 100%; }
-  th, td { border: 0.5pt solid #cccccc; padding: 6px; font-size: 11pt; }
+  th, td { border: 1pt solid #999999; padding: 6px; font-size: 11pt; mso-number-format: '@'; }
   th { background-color: #2c3e50; color: #ffffff; font-weight: bold; text-align: center; }
   .text-right { text-align: right; }
   .text-left { text-align: left; }
@@ -636,7 +712,7 @@ function exportTableToExcel() {
 <table>
   <thead>
     <tr class="title-row"><th colspan="6">ອັນດັບສິນຄ້າຂາຍດີ (POS Sales Report)</th></tr>
-    <tr class="title-row"><th colspan="6" style="font-size: 10pt; font-weight: normal; color: #555;">ໄລຍະເວລາ: <?php echo date('d/m/Y', strtotime($start_date)); ?> ຫາ <?php echo date('d/m/Y', strtotime($end_date)); ?></th></tr>
+    <tr class="title-row"><th colspan="6" style="font-size: 10pt; font-weight: normal; color: #555;">ໄລຍະເວລາ: <?php echo $start_date_formatted; ?> ຫາ <?php echo $end_date_formatted; ?></th></tr>
     <tr>
       <th>ລະຫັດສິນຄ້າ</th>
       <th>ປະເພດ</th>
@@ -647,41 +723,13 @@ function exportTableToExcel() {
     </tr>
   </thead>
   <tbody>
-`;
-
-    $('#topProductsTable tbody tr').each(function() {
-        var cols = $(this).find('td');
-        if (cols.length > 1) {
-            excelHtml += `
-    <tr>
-      <td class="text-center">${$(cols[0]).text().trim()}</td>
-      <td class="text-center">${$(cols[1]).text().trim()}</td>
-      <td class="text-left">${$(cols[2]).text().trim()}</td>
-      <td class="text-center">${$(cols[3]).text().trim()}</td>
-      <td class="text-right">${$(cols[4]).text().trim().replace(/[₭,]/g, '')}</td>
-      <td class="text-right">${$(cols[5]).text().trim().replace(/[₭,]/g, '')}</td>
-    </tr>`;
-        }
-    });
-
-    var footerCols = $('#topProductsTable tfoot tr').find('td');
-    if (footerCols.length > 0) {
-        excelHtml += `
-    <tr class="total-row">
-      <td colspan="3" class="text-right">${$(footerCols[0]).text().trim()}</td>
-      <td class="text-center">${$(footerCols[1]).text().trim()}</td>
-      <td class="text-center">-</td>
-      <td class="text-right">${$(footerCols[3]).text().trim().replace(/[₭,]/g, '')}</td>
-    </tr>`;
-    }
-
-    excelHtml += `
+    ${rows}
   </tbody>
 </table>
 </body>
 </html>`;
 
-    var blob = new Blob([excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    var blob = new Blob(["\ufeff", excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
     var link = document.createElement("a");
     if (link.download !== undefined) { 
         var url = URL.createObjectURL(blob);

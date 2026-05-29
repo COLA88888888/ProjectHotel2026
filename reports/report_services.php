@@ -13,8 +13,10 @@ if (file_exists($lang_file)) {
 }
 
 // Default to start of month to today
-$start_date = $_GET['start_date'] ?? date('Y-m-01');
-$end_date   = $_GET['end_date']   ?? date('Y-m-d');
+$start_date = !empty($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01');
+$end_date   = !empty($_GET['end_date'])   ? $_GET['end_date']   : date('Y-m-d');
+$start_date_formatted = date('d/m/Y', strtotime($start_date));
+$end_date_formatted = date('d/m/Y', strtotime($end_date));
 
 // Helper dates
 $today               = date('Y-m-d');
@@ -240,10 +242,8 @@ foreach ($top_services as $s) {
                             </tr>
                         <?php
                             endforeach;
-                        else:
+                        endif;
                         ?>
-                            <tr><td colspan="4" class="py-4 text-muted">ບໍ່ມີຂໍ້ມູນ</td></tr>
-                        <?php endif; ?>
                     </tbody>
                     <tfoot>
                         <tr class="bg-light font-weight-bold" style="border-top:2px solid #dee2e6;">
@@ -287,8 +287,8 @@ foreach ($top_services as $s) {
                 margin-bottom: 10px !important;
             }
             .pdf-table-container th, .pdf-table-container td {
-                border: 0.5pt solid #aaaaaa !important;
-                padding: 10px 8px !important;
+                border: 1px solid #666666 !important;
+                padding: 8px 6px !important;
                 font-size: 10px !important;
                 line-height: 1.5 !important;
                 word-break: break-word !important;
@@ -300,6 +300,8 @@ foreach ($top_services as $s) {
                 color: #ffffff !important;
                 font-weight: bold !important;
                 text-align: center !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             .pdf-table-container .text-right {
                 text-align: right !important;
@@ -312,7 +314,7 @@ foreach ($top_services as $s) {
             }
         </style>
         <div class="pdf-table-title">ລາຍງານບໍລິການເພີ່ມເຕີມ (Top 10)</div>
-        <div class="pdf-table-subtitle">ໄລຍະເວລາ: <?php echo date('d/m/Y', strtotime($start_date)); ?> ຫາ <?php echo date('d/m/Y', strtotime($end_date)); ?></div>
+        <div class="pdf-table-subtitle">ໄລຍະເວລາ: <?php echo $start_date_formatted; ?> ຫາ <?php echo $end_date_formatted; ?></div>
         <div id="pdfTablePlaceholder"></div>
     </div>
 </div>
@@ -328,15 +330,16 @@ foreach ($top_services as $s) {
 <script src="../plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
 <!-- ChartJS -->
 <script src="../plugins/chart.js/Chart.min.js"></script>
-<!-- HTML2PDF CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- Local HTML2PDF Library -->
+<script src="../plugins/html2pdf/html2pdf.bundle.min.js?v=<?php echo time(); ?>"></script>
 
 <script>
+var topServicesData = <?php echo json_encode($top_services); ?>;
+
 $(document).ready(function() {
     // ----------------------------------------------------
     // 1. Chart.js Config for Top 10 Best Selling Services
     // ----------------------------------------------------
-    const topServicesData = <?php echo json_encode($top_services); ?>;
     
     if (topServicesData.length > 0) {
         const labels = topServicesData.map(s => s.item_name);
@@ -446,6 +449,10 @@ $(document).ready(function() {
 
     // PDF Export
     $('#btnPdf').click(function() {
+        var btn = $(this);
+        var originalHtml = btn.html();
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> ກຳລັງສ້າງ PDF...');
+
         var pdfTitle = "ລາຍງານບໍລິການເພີ່ມເຕີມ (Top 10)";
         var tableHtml = `
             <table>
@@ -459,54 +466,63 @@ $(document).ready(function() {
                 </thead>
                 <tbody>
         `;
-        $('#topServicesTable tbody tr').each(function() {
-            var cols = $(this).find('td');
-            if (cols.length > 1) {
+        if (topServicesData && topServicesData.length > 0) {
+            topServicesData.forEach(function(s) {
+                var name = s.item_name || 'Unknown';
+                var qty = Number(s.total_qty).toLocaleString();
+                var avgPrice = Number(s.avg_price).toLocaleString();
+                var total = Number(s.total_revenue).toLocaleString();
                 tableHtml += `
                     <tr>
-                        <td class="text-left" style="font-weight:bold;">${$(cols[0]).text().trim()}</td>
-                        <td class="text-center" style="font-weight:bold;">${$(cols[1]).text().trim()}</td>
-                        <td class="text-right">${$(cols[2]).text().trim()}</td>
-                        <td class="text-right" style="font-weight:bold; color:#2c3e50;">${$(cols[3]).text().trim()}</td>
+                        <td class="text-left" style="font-weight:bold;">${name}</td>
+                        <td class="text-center" style="font-weight:bold;">${qty}</td>
+                        <td class="text-right">${avgPrice} ₭</td>
+                        <td class="text-right" style="font-weight:bold; color:#2c3e50;">${total} ₭</td>
                     </tr>
                 `;
-            }
-        });
-        // Footer
-        var footerCols = $('#topServicesTable tfoot tr').find('td');
-        if (footerCols.length > 0) {
-            tableHtml += `
-                </tbody>
-                <tfoot>
-                    <tr style="font-weight:bold; background-color: #f9f9f9;">
-                        <td class="text-right">ມູນຄ່າລວມ:</td>
-                        <td class="text-center">${$(footerCols[1]).text().trim()}</td>
-                        <td class="text-center">-</td>
-                        <td class="text-right" style="color:#d9534f;">${$(footerCols[3]).text().trim()}</td>
-                    </tr>
-                </tfoot>
-            </table>`;
+            });
         } else {
-            tableHtml += `</tbody></table>`;
+            tableHtml += `<tr><td colspan="4" class="text-center py-4 text-muted">ບໍ່ມີຂໍ້ມູນ</td></tr>`;
         }
+        
+        var totalQty = <?php echo (int)$top_services_total_qty; ?>;
+        var totalRev = <?php echo (float)$top_services_total_revenue; ?>;
+        tableHtml += `
+            </tbody>
+            <tfoot>
+                <tr style="font-weight:bold; background-color: #f9f9f9;">
+                    <td class="text-right">ມູນຄ່າລວມ:</td>
+                    <td class="text-center">${totalQty.toLocaleString()}</td>
+                    <td class="text-center">-</td>
+                    <td class="text-right" style="color:#d9534f;">${totalRev.toLocaleString()} ₭</td>
+                </tr>
+            </tfoot>
+        </table>`;
 
         $('#pdfTablePlaceholder').html(tableHtml);
+        
         var opt = {
             margin: 12,
             filename: pdfTitle + '_' + new Date().toISOString().split('T')[0] + '.pdf',
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2.5, useCORS: true, letterRendering: true },
+            html2canvas: { scale: 2.5, useCORS: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
         };
+        
         var element = document.getElementById('pdfExportContainer');
         element.style.display = 'block';
-        html2pdf().set(opt).from(element).save().then(function() {
-            element.style.display = 'none';
-            Swal.fire({ icon: 'success', title: 'ດາວໂຫຼດ PDF ສຳເລັດ', confirmButtonColor: '#28a745', confirmButtonText: 'ຕົກລົງ' });
-        }).catch(function(err) {
-            element.style.display = 'none';
-            Swal.fire({ icon: 'error', title: 'ຜິດພາດ', text: err, confirmButtonColor: '#d33', confirmButtonText: 'ຕົກລົງ' });
-        });
+        
+        setTimeout(function() {
+            html2pdf().set(opt).from(element).save().then(function() {
+                element.style.display = 'none';
+                btn.prop('disabled', false).html(originalHtml);
+                Swal.fire({ icon: 'success', title: 'ດາວໂຫຼດ PDF ສຳເລັດ', confirmButtonColor: '#28a745', confirmButtonText: 'ຕົກລົງ' });
+            }).catch(function(err) {
+                element.style.display = 'none';
+                btn.prop('disabled', false).html(originalHtml);
+                Swal.fire({ icon: 'error', title: 'ຜິດພາດ', text: err, confirmButtonColor: '#d33', confirmButtonText: 'ຕົກລົງ' });
+            });
+        }, 150);
     });
 });
 
@@ -523,9 +539,9 @@ function exportToExcel() {
     var excelHtml = `
 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
-<meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
-<!--[if gte mso 9]>
-<xml>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<!--[if gte mso 9]><xml>
  <x:ExcelWorkbook>
   <x:ExcelWorksheets>
    <x:ExcelWorksheet>
@@ -536,14 +552,14 @@ function exportToExcel() {
    </x:ExcelWorksheet>
   </x:ExcelWorksheets>
  </x:ExcelWorkbook>
-</xml>
-<![endif]-->
+</xml><![endif]-->
 <style>
   body, table, td, th {
-    font-family: 'Noto Sans Lao', 'Noto Sans Lao Looped', 'Segoe UI', sans-serif;
+    font-family: 'Phetsarath OT', 'Saysettha OT', 'Noto Sans Lao', Arial Unicode MS, sans-serif;
+    mso-number-format: '@';
   }
   table { border-collapse: collapse; width: 100%; }
-  th, td { border: 0.5pt solid #cccccc; padding: 6px; font-size: 11pt; }
+  th, td { border: 1pt solid #999999; padding: 6px; font-size: 11pt; mso-number-format: '@'; }
   th { background-color: #2c3e50; color: #ffffff; font-weight: bold; text-align: center; }
   .text-right { text-align: right; }
   .text-left { text-align: left; }
@@ -556,7 +572,7 @@ function exportToExcel() {
 <table>
   <thead>
     <tr class="title-row"><th colspan="4">10 ອັນດັບບໍລິການເພີ່ມເຕີມຍອດນິຍົມ</th></tr>
-    <tr class="title-row"><th colspan="4" style="font-size: 10pt; font-weight: normal; color: #555;">ໄລຍະເວລາ: <?php echo date('d/m/Y', strtotime($start_date)); ?> ຫາ <?php echo date('d/m/Y', strtotime($end_date)); ?></th></tr>
+    <tr class="title-row"><th colspan="4" style="font-size: 10pt; font-weight: normal; color: #555;">ໄລຍະເວລາ: <?php echo $start_date_formatted; ?> ຫາ <?php echo $end_date_formatted; ?></th></tr>
     <tr>
       <th>ລາຍການບໍລິການ/ອາຫານ</th>
       <th>ຈຳນວນ</th>
@@ -597,7 +613,7 @@ function exportToExcel() {
 </body>
 </html>`;
 
-    var blob = new Blob([excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    var blob = new Blob(["\ufeff", excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
     var link = document.createElement("a");
     if (link.download !== undefined) {
         var url = URL.createObjectURL(blob);
